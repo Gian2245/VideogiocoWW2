@@ -1,14 +1,16 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://fysnso54wmx6"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(40, 40)
 
-[node name="Player" type="CharacterBody2D"]
+[node name="Player" type="CharacterBody2D" unique_id=1344490887]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=496371300]
 shape = SubResource("RectangleShape2D_1")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=336403475]
+offset_left = -16.0
+offset_top = -13.0
+offset_right = 24.0
+offset_bottom = 27.0
 color = Color(0, 0, 1, 1)
-size = Vector2(40, 40)
-position = Vector2(-20, -20)
