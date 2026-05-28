@@ -253,3 +253,10 @@ autoplay = "run"
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2137141248]
 position = Vector2(-8, 31)
 shape = SubResource("CapsuleShape2D_hnfa5")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(0, -48)
+enabled = true
+top_level = true
+position_smoothing_enabled = true
+position_smoothing_speed = 6.0

@@ -19,14 +19,18 @@ var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 # Riferimento al nodo delle animazioni
 @onready var animated_sprite = $AnimatedSprite2D
+@onready var player_camera: Camera2D = $Camera2D
+@export var camera_offset := Vector2(0, -48)
 
 # Variabile di stato per bloccare il movimento quando attacca o spara
 var sta_attaccando = false
 
 func _ready():
 	animated_sprite.animation_finished.connect(_on_animation_finished)
+	player_camera.global_position = global_position + camera_offset
 
 func _physics_process(delta):
+	player_camera.global_position = global_position + camera_offset
 	# Aggiorna i timer interni del doppio tocco usando il tempo di gioco
 	tempo_ultimo_tocco_destra += delta
 	tempo_ultimo_tocco_sinistra += delta
