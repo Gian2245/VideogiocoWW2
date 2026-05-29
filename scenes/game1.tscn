@@ -3,24 +3,28 @@
 [ext_resource type="Texture2D" uid="uid://dhprrht7i27nw" path="res://assets/ChatGPT Image 27 mag 2026, 11_09_29.png" id="1_hfnnm"]
 [ext_resource type="PackedScene" uid="uid://gnnmnduv2aaf" path="res://scenes/player_1.tscn" id="2_imevv"]
 [ext_resource type="Script" uid="uid://bfxbbs58i881f" path="res://SCRIPTS/sfondo.gd" id="2_uwbbb"]
+[ext_resource type="PackedScene" uid="uid://y8qlg5spdxb5" path="res://scenes/HUD.tscn" id="3_hud"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_imevv"]
 
 [node name="Game" type="Node" unique_id=290228096]
 
+[node name="HUD" parent="." unique_id=1293309439 instance=ExtResource("3_hud")]
+
 [node name="Sfondo" type="TextureRect" parent="." unique_id=1220646175]
 anchors_preset = 9
 anchor_bottom = 1.0
-offset_top = -376.0
-offset_right = 1774.0
-offset_bottom = 151.0
+offset_left = -4.0
+offset_top = -384.0
+offset_right = 1770.0
+offset_bottom = 143.0
 grow_vertical = 2
 texture = ExtResource("1_hfnnm")
 script = ExtResource("2_uwbbb")
 
 [node name="palyer" parent="." unique_id=1115481226 instance=ExtResource("2_imevv")]
-position = Vector2(184, 368)
-scale = Vector2(4, 4)
+position = Vector2(184, 434)
+scale = Vector2(3.2, 3.2)
 
 [node name="Pavimento" type="StaticBody2D" parent="." unique_id=1707241893]
 position = Vector2(95, 680)

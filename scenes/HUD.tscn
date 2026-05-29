@@ -1,0 +1,312 @@
+[gd_scene load_steps=7 format=3 uid="uid://y8qlg5spdxb5"]
+
+[ext_resource type="Script" path="res://SCRIPTS/hud.gd" id="1_hud"]
+[ext_resource type="Texture2D" uid="uid://jbaowja2mtm3" path="res://assets/Soldier_1/Grenade.png" id="3_grenade"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.04, 0.05, 0.06, 0.72)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.38, 0.4, 0.9)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_health_panel"]
+bg_color = Color(0.05, 0.06, 0.07, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.45, 0.38, 0.95)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_seg_on"]
+bg_color = Color(0.28, 0.52, 0.24, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.82, 0.48, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_seg_off"]
+bg_color = Color(0.09, 0.1, 0.09, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.22, 0.2, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_health_glow"]
+bg_color = Color(0.18, 0.35, 0.16, 0.35)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="HUD" type="CanvasLayer" groups=["hud"]]
+layer = 10
+script = ExtResource("1_hud")
+
+[node name="HealthRoot" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 228.0
+offset_bottom = 78.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="HealthPanel" type="PanelContainer" parent="HealthRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_health_panel")
+
+[node name="HealthVBox" type="VBoxContainer" parent="HealthRoot/HealthPanel"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="HealthHeader" type="HBoxContainer" parent="HealthRoot/HealthPanel/HealthVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HealthIcon" type="Label" parent="HealthRoot/HealthPanel/HealthVBox/HealthHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.82, 0.65, 1)
+theme_override_font_sizes/font_size = 13
+text = "✚"
+vertical_alignment = 1
+
+[node name="HealthTitle" type="Label" parent="HealthRoot/HealthPanel/HealthVBox/HealthHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.7, 0.74, 0.68, 1)
+theme_override_font_sizes/font_size = 10
+text = "SALUTE"
+vertical_alignment = 1
+
+[node name="HealthValue" type="Label" parent="HealthRoot/HealthPanel/HealthVBox/HealthHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_font_sizes/font_size = 13
+text = "100"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="HealthBarFrame" type="Control" parent="HealthRoot/HealthPanel/HealthVBox"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+
+[node name="HealthGlow" type="Panel" parent="HealthRoot/HealthPanel/HealthVBox/HealthBarFrame"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_health_glow")
+
+[node name="HealthSegments" type="HBoxContainer" parent="HealthRoot/HealthPanel/HealthVBox/HealthBarFrame"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 3
+
+[node name="Seg1" type="Panel" parent="HealthRoot/HealthPanel/HealthVBox/HealthBarFrame/HealthSegments"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_seg_on")
+
+[node name="Seg2" type="Panel" parent="HealthRoot/HealthPanel/HealthVBox/HealthBarFrame/HealthSegments"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_seg_on")
+
+[node name="Seg3" type="Panel" parent="HealthRoot/HealthPanel/HealthVBox/HealthBarFrame/HealthSegments"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_seg_on")
+
+[node name="Seg4" type="Panel" parent="HealthRoot/HealthPanel/HealthVBox/HealthBarFrame/HealthSegments"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_seg_on")
+
+[node name="Seg5" type="Panel" parent="HealthRoot/HealthPanel/HealthVBox/HealthBarFrame/HealthSegments"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_seg_on")
+
+[node name="Seg6" type="Panel" parent="HealthRoot/HealthPanel/HealthVBox/HealthBarFrame/HealthSegments"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_seg_on")
+
+[node name="Seg7" type="Panel" parent="HealthRoot/HealthPanel/HealthVBox/HealthBarFrame/HealthSegments"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_seg_on")
+
+[node name="Seg8" type="Panel" parent="HealthRoot/HealthPanel/HealthVBox/HealthBarFrame/HealthSegments"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_seg_on")
+
+[node name="Seg9" type="Panel" parent="HealthRoot/HealthPanel/HealthVBox/HealthBarFrame/HealthSegments"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_seg_on")
+
+[node name="Seg10" type="Panel" parent="HealthRoot/HealthPanel/HealthVBox/HealthBarFrame/HealthSegments"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_seg_on")
+
+[node name="WeaponRoot" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -290.0
+offset_top = -128.0
+offset_right = -12.0
+offset_bottom = -52.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="Panel" type="PanelContainer" parent="WeaponRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="HBox" type="HBoxContainer" parent="WeaponRoot/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="WeaponBlock" type="VBoxContainer" parent="WeaponRoot/Panel/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(52, 0)
+theme_override_constants/separation = 2
+
+[node name="WeaponName" type="Label" parent="WeaponRoot/Panel/HBox/WeaponBlock"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_font_sizes/font_size = 15
+text = "AR11"
+
+[node name="FireMode" type="Label" parent="WeaponRoot/Panel/HBox/WeaponBlock"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.65, 0.68, 1)
+theme_override_font_sizes/font_size = 9
+text = "SEMI-AUTO"
+
+[node name="AmmoBlock" type="HBoxContainer" parent="WeaponRoot/Panel/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="AmmoNumbers" type="VBoxContainer" parent="WeaponRoot/Panel/HBox/AmmoBlock"]
+layout_mode = 2
+theme_override_constants/separation = -2
+
+[node name="AmmoCurrent" type="Label" parent="WeaponRoot/Panel/HBox/AmmoBlock/AmmoNumbers"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_font_sizes/font_size = 24
+text = "8"
+horizontal_alignment = 2
+
+[node name="AmmoReserve" type="Label" parent="WeaponRoot/Panel/HBox/AmmoBlock/AmmoNumbers"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.72, 0.72, 1)
+theme_override_font_sizes/font_size = 11
+text = "8"
+horizontal_alignment = 2
+
+[node name="BulletIcon" type="Label" parent="WeaponRoot/Panel/HBox/AmmoBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "|"
+vertical_alignment = 1
+
+[node name="GrenadeBlock" type="HBoxContainer" parent="WeaponRoot/Panel/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 3
+alignment = 1
+
+[node name="GrenadeCount" type="Label" parent="WeaponRoot/Panel/HBox/GrenadeBlock"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_font_sizes/font_size = 13
+text = "2"
+vertical_alignment = 1
+
+[node name="GrenadeIcon" type="TextureRect" parent="WeaponRoot/Panel/HBox/GrenadeBlock"]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+texture = ExtResource("3_grenade")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GrenadeCount2" type="Label" parent="WeaponRoot/Panel/HBox/GrenadeBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_font_sizes/font_size = 13
+text = "2"
+vertical_alignment = 1
