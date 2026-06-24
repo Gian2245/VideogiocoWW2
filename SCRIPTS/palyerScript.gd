@@ -126,12 +126,20 @@ func _physics_process(delta: float) -> void:
 func _inizia_attacco() -> void:
 	sta_attaccando = true
 	animated_sprite.play("attack")
+	
+	# Applica danno melee (35) ai nemici molto vicini davanti
+	var direction_x = -1.0 if animated_sprite.flip_h else 1.0
+	_applica_danno_frontale(35, 250.0, 150.0, direction_x)
 
 func _inizia_sparo() -> void:
 	sta_attaccando = true
 	munizioni_attuali -= 1
 	_aggiorna_hud_munizioni()
 	animated_sprite.play("spara")
+	
+	# Applica danno sparo (20) ai nemici davanti
+	var direction_x = -1.0 if animated_sprite.flip_h else 1.0
+	_applica_danno_frontale(20, 400.0, 150.0, direction_x)
 
 func _inizia_ricarica() -> void:
 	sta_attaccando = true
@@ -143,18 +151,89 @@ func _inizia_granata() -> void:
 	if _hud:
 		_hud.imposta_granate(granate)
 	animated_sprite.play("granata")
-
 func _lancia_esplosione() -> void:
 	var verso := -1.0 if animated_sprite.flip_h else 1.0
-	explosion_fx.position = Vector2(distanza_esplosione * verso, -16.0)
+	
+	# Creiamo una granata visiva un po' più grande
+	var granata = Polygon2D.new()
+	granata.polygon = PackedVector2Array([Vector2(-8,-8), Vector2(8,-8), Vector2(8,8), Vector2(-8,8)])
+	granata.color = Color(0.15, 0.15, 0.1) # Grigio scuro
+	get_parent().add_child(granata)
+	
+	# Punto di partenza: circa la mano del giocatore
+	var start_pos = global_position + Vector2(40 * verso, -50)
+	granata.global_position = start_pos
+	
+	# Punto di arrivo: i piedi sul pavimento. Il pavimento reale è a Y + 240 pixel per via dello scale 3.2x
+	var floor_y = global_position.y + 240.0
+	var end_pos = Vector2(global_position.x + (400.0 * verso), floor_y) 
+	
+	# Altezza del picco della parabola
+	var peak_y = start_pos.y - 180.0
+	
+	# Animazione (Traiettoria a Parabola)
+	var tween = create_tween()
+	tween.set_parallel(true)
+	
+	tween.tween_property(granata, "global_position:x", end_pos.x, 0.7)
+	
+	var tween_y = create_tween()
+	tween_y.tween_property(granata, "global_position:y", peak_y, 0.35).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween_y.tween_property(granata, "global_position:y", end_pos.y, 0.35).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD).set_delay(0.35)
+	
+	var tween_rot = create_tween()
+	tween_rot.tween_property(granata, "rotation", deg_to_rad(360 * 2 * verso), 0.7)
+	
+	tween_y.finished.connect(func():
+		granata.queue_free()
+		_esplodi(end_pos)
+	)
+	
+	sta_attaccando = false
+	animated_sprite.play("fermo")
+
+func _esplodi(pos_esplosione: Vector2) -> void:
+	# Solleviamo visivamente l'esplosione dal pavimento per farla aderire meglio al suolo
+	explosion_fx.global_position = pos_esplosione - Vector2(0, 60)
 	explosion_fx.flip_h = animated_sprite.flip_h
 	explosion_fx.visible = true
 	explosion_fx.play("esplosione")
+	
+	# Applica danno esplosione (Raggio di 200 pixel)
+	_applica_danno_esplosione(pos_esplosione, 200.0, 100)
 
 func _on_esplosione_finita() -> void:
 	explosion_fx.visible = false
-	sta_attaccando = false
-	animated_sprite.play("fermo")
+
+func _applica_danno_frontale(danno: int, max_dist_x: float, max_dist_y: float, dir_x: float) -> void:
+	var nemici = get_tree().get_nodes_in_group("enemies")
+	for nemico in nemici:
+		if not nemico.has_method("take_damage") or nemico.get("is_dead") == true:
+			continue
+		
+		var diff = nemico.global_position - global_position
+		# Controlla se è nella direzione giusta
+		if sign(diff.x) == sign(dir_x) or diff.x == 0:
+			if abs(diff.x) <= max_dist_x and abs(diff.y) <= max_dist_y:
+				nemico.take_damage(danno)
+
+func _applica_danno_esplosione(centro: Vector2, raggio: float, max_danno: int) -> void:
+	var nemici = get_tree().get_nodes_in_group("enemies")
+	for nemico in nemici:
+		if not nemico.has_method("take_damage") or nemico.get("is_dead") == true:
+			continue
+			
+		# Poiché il nemico è ingrandito, calcoliamo la distanza dal centro dell'esplosione (che è a terra)
+		# rispetto ai PIEDI del nemico (anch'essi a terra, Y + 240)
+		var piedi_nemico = nemico.global_position + Vector2(0, 240.0)
+		var dist = centro.distance_to(piedi_nemico)
+		
+		if dist <= raggio:
+			if dist < 60.0:
+				nemico.take_damage(max_danno * 5) # Elimina subito
+			else:
+				var danno_scalato = int(max_danno * (1.0 - (dist / raggio)))
+				nemico.take_damage(max(10, danno_scalato))
 
 func _gestisci_animazioni(direction: float) -> void:
 	if not is_on_floor():
