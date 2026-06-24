@@ -11,6 +11,10 @@ extends CanvasLayer
 @onready var _health_glow: Panel = %HealthGlow
 @onready var _health_segments: HBoxContainer = %HealthSegments
 
+@onready var _armor_value: Label = %ArmorValue
+@onready var _armor_glow: Panel = %ArmorGlow
+@onready var _armor_segments: HBoxContainer = %ArmorSegments
+
 const COLOR_NORMAL := Color(0.95, 0.95, 0.95, 1.0)
 const COLOR_DIM := Color(0.72, 0.72, 0.72, 1.0)
 const COLOR_EMPTY := Color(0.92, 0.28, 0.22, 1.0)
@@ -25,17 +29,28 @@ const SEG_BORDER_RED := Color(0.92, 0.32, 0.26, 1.0)
 const SEG_OFF_BG := Color(0.09, 0.1, 0.09, 1.0)
 const SEG_OFF_BORDER := Color(0.2, 0.22, 0.2, 1.0)
 
+const SEG_ON_BLUE := Color(0.12, 0.45, 0.75, 1.0)
+const SEG_BORDER_BLUE := Color(0.25, 0.65, 0.95, 1.0)
+
 var _segment_panels: Array[Panel] = []
 var _style_seg_on := StyleBoxFlat.new()
 var _style_seg_off := StyleBoxFlat.new()
 var _ultimo_ratio_salute := 1.0
 
+var _segment_panels_armor: Array[Panel] = []
+var _style_seg_on_armor := StyleBoxFlat.new()
+var _style_seg_off_armor := StyleBoxFlat.new()
+
 func _ready() -> void:
 	_grenade_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_setup_segment_styles()
+	_setup_armor_styles()
 	for child in _health_segments.get_children():
 		if child is Panel:
 			_segment_panels.append(child)
+	for child in _armor_segments.get_children():
+		if child is Panel:
+			_segment_panels_armor.append(child)
 
 func _setup_segment_styles() -> void:
 	_style_seg_on.set_border_width_all(1)
@@ -44,6 +59,17 @@ func _setup_segment_styles() -> void:
 	_style_seg_off.border_color = SEG_OFF_BORDER
 	_style_seg_off.set_border_width_all(1)
 	_style_seg_off.set_corner_radius_all(2)
+
+func _setup_armor_styles() -> void:
+	_style_seg_on_armor.set_border_width_all(1)
+	_style_seg_on_armor.set_corner_radius_all(2)
+	_style_seg_on_armor.bg_color = SEG_ON_BLUE
+	_style_seg_on_armor.border_color = SEG_BORDER_BLUE
+	
+	_style_seg_off_armor.bg_color = SEG_OFF_BG
+	_style_seg_off_armor.border_color = SEG_OFF_BORDER
+	_style_seg_off_armor.set_border_width_all(1)
+	_style_seg_off_armor.set_corner_radius_all(2)
 
 func aggiorna_munizioni(attuali: int, massime: int, riserva: int = -1) -> void:
 	_ammo_current.text = str(attuali)
@@ -96,6 +122,27 @@ func _pulse_danno() -> void:
 	var tween := create_tween()
 	tween.tween_property(_health_segments, "modulate", Color(1.4, 0.7, 0.7), 0.08)
 	tween.tween_property(_health_segments, "modulate", Color.WHITE, 0.2)
+
+func aggiorna_armatura(attuale: int, massimo: int) -> void:
+	var ratio := clampf(float(attuale) / float(massimo), 0.0, 1.0) if massimo > 0 else 0.0
+	_armor_value.text = str(attuale)
+	_aggiorna_segmenti_armatura(ratio)
+	_aggiorna_glow_armatura(ratio)
+
+func _aggiorna_segmenti_armatura(ratio: float) -> void:
+	if _segment_panels_armor.is_empty():
+		return
+	var attivi := int(ceil(ratio * float(_segment_panels_armor.size())))
+	for i in _segment_panels_armor.size():
+		if i < attivi:
+			_segment_panels_armor[i].add_theme_stylebox_override("panel", _style_seg_on_armor)
+		else:
+			_segment_panels_armor[i].add_theme_stylebox_override("panel", _style_seg_off_armor)
+
+func _aggiorna_glow_armatura(ratio: float) -> void:
+	_armor_glow.modulate = SEG_ON_BLUE
+	_armor_glow.modulate.a = clampf(ratio * 0.85 + 0.1, 0.1, 0.85)
+	_armor_glow.anchor_right = clampf(ratio, 0.02, 1.0)
 
 func imposta_arma(nome: String) -> void:
 	_weapon_name.text = nome.to_upper()

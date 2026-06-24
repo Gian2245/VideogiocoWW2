@@ -480,7 +480,7 @@ animations = [{
 "speed": 14.0
 }]
 
-[node name="palyer" type="CharacterBody2D" unique_id=1115481226]
+[node name="palyer" type="CharacterBody2D" groups=["player"] unique_id=1115481226]
 script = ExtResource("1_vod78")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1090550542]

@@ -1,11 +1,12 @@
 extends CharacterBody2D
 
 # --- VARIABILI DI MOVIMENTO CONFIGURABILI ---
-@export var WALK_SPEED = 210.0
-@export var RUN_SPEED = 450.0
+@export var WALK_SPEED = 300.0
+@export var RUN_SPEED = 550.0
 @export var JUMP_VELOCITY = -500.0
 @export var munizioni_massime := 8
 @export var max_health := 100
+@export var max_armor := 50
 @export var granate := 2
 @export var distanza_esplosione := 110.0
 @export var scala_esplosione := Vector2(2.4, 2.4)
@@ -15,6 +16,7 @@ extends CharacterBody2D
 var velocità_attuale = WALK_SPEED
 var munizioni_attuali := 0
 var health := 100
+var armor := 0
 
 # --- VARIABILI PER IL DOPPIO TOCCO (DASH/RUN) ---
 var tempo_ultimo_tocco_destra = 0.0
@@ -32,6 +34,7 @@ var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 var sta_attaccando = false
 var _hud: Node
+var max_cam_x := -INF
 
 func _ready() -> void:
 	munizioni_attuali = munizioni_massime
@@ -41,7 +44,9 @@ func _ready() -> void:
 	explosion_fx.scale = scala_esplosione
 	player_camera.zoom = camera_zoom
 	player_camera.enabled = true
+	player_camera.position_smoothing_enabled = false
 	player_camera.global_position = global_position + camera_offset
+	max_cam_x = player_camera.global_position.x
 	_hud = get_tree().get_first_node_in_group("hud")
 	if _hud:
 		_hud.imposta_arma(nome_arma)
@@ -49,9 +54,9 @@ func _ready() -> void:
 		_hud.imposta_granate(granate)
 	_aggiorna_hud_munizioni()
 	_aggiorna_hud_salute()
+	_aggiorna_hud_armatura()
 
 func _physics_process(delta: float) -> void:
-	player_camera.global_position = global_position + camera_offset
 	tempo_ultimo_tocco_destra += delta
 	tempo_ultimo_tocco_sinistra += delta
 
@@ -104,6 +109,19 @@ func _physics_process(delta: float) -> void:
 
 	_gestisci_animazioni(direction)
 	move_and_slide()
+	
+	# La telecamera avanza solo verso destra
+	var target_cam_x = global_position.x + camera_offset.x
+	if target_cam_x > max_cam_x:
+		max_cam_x = target_cam_x
+		
+	player_camera.global_position.x = max_cam_x
+	player_camera.global_position.y = global_position.y + camera_offset.y
+	
+	# Impedisce al giocatore di uscire dallo schermo a sinistra
+	var left_edge = player_camera.global_position.x - (get_viewport_rect().size.x / 2.0) / player_camera.zoom.x
+	if global_position.x < left_edge + 30:
+		global_position.x = left_edge + 30
 
 func _inizia_attacco() -> void:
 	sta_attaccando = true
@@ -171,8 +189,29 @@ func _aggiorna_hud_salute() -> void:
 		return
 	_hud.aggiorna_salute(health, max_health)
 
+func _aggiorna_hud_armatura() -> void:
+	if _hud == null:
+		return
+	if _hud.has_method("aggiorna_armatura"):
+		_hud.aggiorna_armatura(armor, max_armor)
+
+func raccogli_giubbotto() -> void:
+	armor = max_armor
+	_aggiorna_hud_armatura()
+
 func take_damage(amount: int) -> void:
 	if amount <= 0:
 		return
-	health = max(health - amount, 0)
-	_aggiorna_hud_salute()
+		
+	if armor > 0:
+		if armor >= amount:
+			armor -= amount
+			amount = 0
+		else:
+			amount -= armor
+			armor = 0
+		_aggiorna_hud_armatura()
+		
+	if amount > 0:
+		health = max(health - amount, 0)
+		_aggiorna_hud_salute()
