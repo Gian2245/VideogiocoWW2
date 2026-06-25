@@ -6,9 +6,9 @@
 [ext_resource type="PackedScene" uid="uid://tut0r14l00n3" path="res://scenes/TutorialZone.tscn" id="4_tutorial"]
 [ext_resource type="PackedScene" uid="uid://cxqjxx1112223" path="res://scenes/enemy_raider_1.tscn" id="5_enemy"]
 [ext_resource type="PackedScene" path="res://scenes/BreakableBlock.tscn" id="6_block"]
-[ext_resource type="Texture2D" uid="uid://cklnovg8rc275" path="res://assets/blocchi/blocco3.png" id="7_tex3"]
-[ext_resource type="Texture2D" uid="uid://bmfybspwkwygf" path="res://assets/blocchi/blocco4.png" id="8_tex4"]
-[ext_resource type="Texture2D" uid="uid://hdbjgq72pqhd" path="res://assets/blocchi/blocco5.png" id="9_tex5"]
+[ext_resource type="Texture2D" uid="uid://cklnovg8rc275" path="res://assets/Blocchi/blocco3.png" id="7_tex3"]
+[ext_resource type="Texture2D" uid="uid://bmfybspwkwygf" path="res://assets/Blocchi/blocco4.png" id="8_tex4"]
+[ext_resource type="Texture2D" uid="uid://hdbjgq72pqhd" path="res://assets/Blocchi/blocco5.png" id="9_tex5"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_imevv"]
 
@@ -75,16 +75,16 @@ position = Vector2(5337, 700)
 scale = Vector2(3.2, 3.2)
 
 [node name="Blocco3" parent="." unique_id=1177158681 instance=ExtResource("6_block")]
-position = Vector2(2650, 804)
+position = Vector2(1850, 805.00006)
 scale = Vector2(0.6, 0.6)
 texture_to_use = ExtResource("7_tex3")
 
 [node name="Blocco4" parent="." unique_id=1485187525 instance=ExtResource("6_block")]
-position = Vector2(2780, 804)
+position = Vector2(1980, 804)
 scale = Vector2(0.6, 0.6)
 texture_to_use = ExtResource("8_tex4")
 
 [node name="Blocco5" parent="." unique_id=2013954851 instance=ExtResource("6_block")]
-position = Vector2(2910, 804)
+position = Vector2(2110, 804)
 scale = Vector2(0.6, 0.6)
 texture_to_use = ExtResource("9_tex5")

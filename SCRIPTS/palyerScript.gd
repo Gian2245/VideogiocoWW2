@@ -3,7 +3,7 @@ extends CharacterBody2D
 # --- VARIABILI DI MOVIMENTO CONFIGURABILI ---
 @export var WALK_SPEED = 300.0
 @export var RUN_SPEED = 550.0
-@export var JUMP_VELOCITY = -500.0
+@export var JUMP_VELOCITY = -750.0
 @export var munizioni_massime := 8
 @export var max_health := 100
 @export var max_armor := 50
@@ -23,6 +23,7 @@ var tempo_ultimo_tocco_destra = 0.0
 var tempo_ultimo_tocco_sinistra = 0.0
 const SOGLIA_DOPPIO_TOCCO = 0.25
 var sta_correndo = false
+var carica_granata: float = 0.0
 
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
@@ -64,6 +65,8 @@ func _physics_process(delta: float) -> void:
 		velocity.y += gravity * delta
 
 	if sta_attaccando:
+		if animated_sprite.animation == "granata" and Input.is_action_pressed("granata"):
+			carica_granata += delta
 		velocity.x = 0
 		move_and_slide()
 		return
@@ -137,9 +140,19 @@ func _inizia_sparo() -> void:
 	_aggiorna_hud_munizioni()
 	animated_sprite.play("spara")
 	
-	# Applica danno sparo (20) ai nemici davanti
 	var direction_x = -1.0 if animated_sprite.flip_h else 1.0
-	_applica_danno_frontale(20, 400.0, 150.0, direction_x)
+	
+	var bullet_script = preload("res://SCRIPTS/Proiettile.gd")
+	var bullet = Area2D.new()
+	bullet.set_script(bullet_script)
+	bullet.velocity = Vector2(direction_x * 1600.0, 0)
+	bullet.danno = 20
+	bullet.global_position = global_position + Vector2(direction_x * 160, 85)
+	
+	if direction_x < 0:
+		bullet.scale.x = -1
+		
+	get_parent().add_child(bullet)
 
 func _inizia_ricarica() -> void:
 	sta_attaccando = true
@@ -147,6 +160,7 @@ func _inizia_ricarica() -> void:
 
 func _inizia_granata() -> void:
 	sta_attaccando = true
+	carica_granata = 0.0
 	granate -= 1
 	if _hud:
 		_hud.imposta_granate(granate)
@@ -166,7 +180,11 @@ func _lancia_esplosione() -> void:
 	
 	# Punto di arrivo: i piedi sul pavimento. Il pavimento reale è a Y + 240 pixel per via dello scale 3.2x
 	var floor_y = global_position.y + 240.0
-	var end_pos = Vector2(global_position.x + (400.0 * verso), floor_y) 
+	
+	# Calcola distanza in base alla carica: 0s -> cade vicino, 0.5s -> lancio lontano
+	var power = min(carica_granata / 0.5, 1.0)
+	var distanza = 50.0 + power * 550.0
+	var end_pos = Vector2(global_position.x + (distanza * verso), floor_y) 
 	
 	# Altezza del picco della parabola
 	var peak_y = start_pos.y - 180.0
@@ -194,7 +212,7 @@ func _lancia_esplosione() -> void:
 
 func _esplodi(pos_esplosione: Vector2) -> void:
 	# Solleviamo visivamente l'esplosione dal pavimento per farla aderire meglio al suolo
-	explosion_fx.global_position = pos_esplosione - Vector2(0, 60)
+	explosion_fx.global_position = pos_esplosione - Vector2(0, 153)
 	explosion_fx.flip_h = animated_sprite.flip_h
 	explosion_fx.visible = true
 	explosion_fx.play("esplosione")
@@ -206,29 +224,40 @@ func _on_esplosione_finita() -> void:
 	explosion_fx.visible = false
 
 func _applica_danno_frontale(danno: int, max_dist_x: float, max_dist_y: float, dir_x: float, is_melee: bool = false) -> void:
-	var nemici = get_tree().get_nodes_in_group("enemies")
-	if is_melee:
-		nemici += get_tree().get_nodes_in_group("breakable")
-	for nemico in nemici:
-		if not nemico.has_method("take_damage") or nemico.get("is_dead") == true:
+	var bersagli = get_tree().get_nodes_in_group("enemies")
+	bersagli += get_tree().get_nodes_in_group("breakable")
+	
+	var bersagli_validi = []
+	for b in bersagli:
+		if not b.has_method("take_damage") or b.get("is_dead") == true:
 			continue
 		
-		var diff = nemico.global_position - global_position
-		# Controlla se è nella direzione giusta
+		var diff = b.global_position - global_position
 		if sign(diff.x) == sign(dir_x) or diff.x == 0:
 			if abs(diff.x) <= max_dist_x and abs(diff.y) <= max_dist_y:
-				nemico.take_damage(danno)
+				bersagli_validi.append({"nodo": b, "dist": abs(diff.x)})
+				
+	bersagli_validi.sort_custom(func(a, b): return a.dist < b.dist)
+	
+	for bersaglio in bersagli_validi:
+		var b = bersaglio.nodo
+		b.take_damage(danno)
+		if not is_melee and b.is_in_group("breakable"):
+			break # Il proiettile si ferma sulla prima cassa colpita
 
 func _applica_danno_esplosione(centro: Vector2, raggio: float, max_danno: int) -> void:
 	var nemici = get_tree().get_nodes_in_group("enemies")
+	nemici += get_tree().get_nodes_in_group("breakable")
 	for nemico in nemici:
 		if not nemico.has_method("take_damage") or nemico.get("is_dead") == true:
 			continue
 			
-		# Poiché il nemico è ingrandito, calcoliamo la distanza dal centro dell'esplosione (che è a terra)
-		# rispetto ai PIEDI del nemico (anch'essi a terra, Y + 240)
-		var piedi_nemico = nemico.global_position + Vector2(0, 240.0)
-		var dist = centro.distance_to(piedi_nemico)
+		var pos_target = nemico.global_position
+		if nemico.is_in_group("enemies"):
+			# Offset per i nemici rispetto ai piedi
+			pos_target += Vector2(0, 240.0)
+			
+		var dist = centro.distance_to(pos_target)
 		
 		if dist <= raggio:
 			if dist < 60.0:
