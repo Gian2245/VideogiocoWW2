@@ -11,6 +11,7 @@ outline_size = 4
 outline_color = Color(0, 0, 0, 1)
 
 [node name="TutorialZone" type="Area2D"]
+z_index = 100
 script = ExtResource("1_script")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

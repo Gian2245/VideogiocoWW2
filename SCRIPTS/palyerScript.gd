@@ -129,7 +129,7 @@ func _inizia_attacco() -> void:
 	
 	# Applica danno melee (35) ai nemici molto vicini davanti
 	var direction_x = -1.0 if animated_sprite.flip_h else 1.0
-	_applica_danno_frontale(35, 250.0, 150.0, direction_x)
+	_applica_danno_frontale(35, 250.0, 150.0, direction_x, true)
 
 func _inizia_sparo() -> void:
 	sta_attaccando = true
@@ -205,8 +205,10 @@ func _esplodi(pos_esplosione: Vector2) -> void:
 func _on_esplosione_finita() -> void:
 	explosion_fx.visible = false
 
-func _applica_danno_frontale(danno: int, max_dist_x: float, max_dist_y: float, dir_x: float) -> void:
+func _applica_danno_frontale(danno: int, max_dist_x: float, max_dist_y: float, dir_x: float, is_melee: bool = false) -> void:
 	var nemici = get_tree().get_nodes_in_group("enemies")
+	if is_melee:
+		nemici += get_tree().get_nodes_in_group("breakable")
 	for nemico in nemici:
 		if not nemico.has_method("take_damage") or nemico.get("is_dead") == true:
 			continue
