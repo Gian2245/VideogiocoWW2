@@ -148,9 +148,19 @@ func _play_hurt() -> void:
 			anim.play("idle")
 	)
 
+var vest_scene = preload("res://scenes/vest_pickup.tscn")
+
 func die() -> void:
+	if anim.has_animation("dead"):
+		anim.play("dead")
 	is_dead = true
 	set_physics_process(false)
+	
+	if vest_scene:
+		var vest = vest_scene.instantiate()
+		vest.global_position = global_position + Vector2(0, 110)
+		# Use call_deferred to safely add the item to the scene
+		get_parent().call_deferred("add_child", vest)
 	$CollisionShape2D.set_deferred("disabled", true)
 	health_bar.visible = false
 	

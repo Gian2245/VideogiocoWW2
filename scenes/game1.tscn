@@ -75,7 +75,7 @@ position = Vector2(5337, 700)
 scale = Vector2(3.2, 3.2)
 
 [node name="Blocco3" parent="." unique_id=1177158681 instance=ExtResource("6_block")]
-position = Vector2(1850, 805.00006)
+position = Vector2(1852.0001, 805.00006)
 scale = Vector2(0.6, 0.6)
 texture_to_use = ExtResource("7_tex3")
 

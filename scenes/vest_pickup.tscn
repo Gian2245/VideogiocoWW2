@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://xkihl83rkoas"]
+
+[ext_resource type="Script" uid="uid://ctqaienpojsyl" path="res://SCRIPTS/vest_pickup.gd" id="1_scr"]
+[ext_resource type="Texture2D" uid="uid://ctshefqvhiol1" path="res://assets/giubbotto.png" id="2_habpb"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vest"]
+size = Vector2(32, 32)
+
+[node name="VestPickup" type="Area2D" unique_id=1467770317]
+z_index = 5
+scale = Vector2(3.2, 3.2)
+script = ExtResource("1_scr")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=81436657]
+position = Vector2(4.7683716e-07, -0.3125)
+shape = SubResource("RectangleShape2D_vest")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=26440798]
+position = Vector2(-0.3124962, -0.3124981)
+scale = Vector2(0.018524764, 0.018101273)
+texture = ExtResource("2_habpb")
