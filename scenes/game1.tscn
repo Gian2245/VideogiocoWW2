@@ -9,9 +9,10 @@
 [ext_resource type="Texture2D" uid="uid://cklnovg8rc275" path="res://assets/Blocchi/blocco3.png" id="7_tex3"]
 [ext_resource type="Texture2D" uid="uid://bmfybspwkwygf" path="res://assets/Blocchi/blocco4.png" id="8_tex4"]
 [ext_resource type="Texture2D" uid="uid://hdbjgq72pqhd" path="res://assets/Blocchi/blocco5.png" id="9_tex5"]
-[ext_resource type="Script" path="res://SCRIPTS/game_over_screen.gd" id="10_gos"]
-[ext_resource type="Script" path="res://SCRIPTS/win_screen.gd" id="11_ws"]
-[ext_resource type="Script" path="res://SCRIPTS/finish_zone.gd" id="12_fz"]
+[ext_resource type="Script" uid="uid://bwhf46ne7hvou" path="res://SCRIPTS/game_over_screen.gd" id="10_gos"]
+[ext_resource type="Script" uid="uid://8kdmhu0na0rm" path="res://SCRIPTS/win_screen.gd" id="11_ws"]
+[ext_resource type="Script" uid="uid://cyjmw8nj71kqf" path="res://SCRIPTS/finish_zone.gd" id="12_fz"]
+[ext_resource type="PackedScene" uid="uid://mq5lcewn4w11" path="res://scenes/weapon_pickup.tscn" id="13_weapon"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_imevv"]
 
@@ -80,6 +81,12 @@ per attaccare col coltello"
 position = Vector2(5337, 700)
 scale = Vector2(3.2, 3.2)
 
+[node name="EnemyRaider2" parent="." unique_id=1818115983 instance=ExtResource("5_enemy")]
+position = Vector2(6100, 700)
+scale = Vector2(3.2, 3.2)
+drop_item_scene = ExtResource("13_weapon")
+raider_index = 2
+
 [node name="Blocco3" parent="." unique_id=1177158681 instance=ExtResource("6_block")]
 position = Vector2(1852.0001, 805.00006)
 scale = Vector2(0.6, 0.6)
@@ -95,15 +102,15 @@ position = Vector2(2110, 804)
 scale = Vector2(0.6, 0.6)
 texture_to_use = ExtResource("9_tex5")
 
-[node name="GameOverScreen" type="CanvasLayer" parent="."]
+[node name="GameOverScreen" type="CanvasLayer" parent="." unique_id=130636057]
 script = ExtResource("10_gos")
 
-[node name="WinScreen" type="CanvasLayer" parent="."]
+[node name="WinScreen" type="CanvasLayer" parent="." unique_id=551252896]
 script = ExtResource("11_ws")
 
-[node name="FinishZone" type="Area2D" parent="."]
-position = Vector2(5800, 650)
+[node name="FinishZone" type="Area2D" parent="." unique_id=1507688326]
+position = Vector2(6900, 650)
 script = ExtResource("12_fz")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="FinishZone"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="FinishZone" unique_id=417275268]
 shape = SubResource("RectangleShape2D_finish")

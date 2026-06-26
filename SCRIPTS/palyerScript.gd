@@ -17,6 +17,7 @@ var velocità_attuale = WALK_SPEED
 var munizioni_attuali := 0
 var health := 100
 var armor := 0
+var ha_arma_nuova := false
 
 # --- VARIABILI PER IL DOPPIO TOCCO (DASH/RUN) ---
 var tempo_ultimo_tocco_destra = 0.0
@@ -200,7 +201,7 @@ func _inizia_sparo() -> void:
 	var bullet = Area2D.new()
 	bullet.set_script(bullet_script)
 	bullet.velocity = Vector2(direction_x * 1600.0, 0)
-	bullet.danno = 20
+	bullet.danno = 35 if ha_arma_nuova else 20
 	bullet.global_position = global_position + Vector2(direction_x * 160, 85)
 	
 	if direction_x < 0:
@@ -389,3 +390,38 @@ func take_damage(amount: int) -> void:
 		_aggiorna_hud_salute()
 		if health <= 0:
 			_trigger_game_over()
+
+func cambia_soldato(indice: int) -> void:
+	var folder_nuovo = "res://assets/Soldier_" + str(indice) + "/"
+	
+	# We duplicate the sprite_frames to avoid editing the original resource on disk
+	animated_sprite.sprite_frames = animated_sprite.sprite_frames.duplicate(true)
+	
+	var anims = animated_sprite.sprite_frames.get_animation_names()
+	for anim_name in anims:
+		var frame_count = animated_sprite.sprite_frames.get_frame_count(anim_name)
+		for f in range(frame_count):
+			var tex = animated_sprite.sprite_frames.get_frame_texture(anim_name, f)
+			if tex is AtlasTexture:
+				var path = tex.atlas.resource_path
+				if path.contains("assets/Soldier_"):
+					var filename = path.get_file()
+					var new_path = folder_nuovo + filename
+					if ResourceLoader.exists(new_path):
+						var new_atlas = load(new_path)
+						tex.atlas = new_atlas
+
+func raccogli_arma(soldier_index: int) -> void:
+	ha_arma_nuova = true
+	nome_arma = "STG44"
+	modalita_sparo = "Automatico"
+	munizioni_massime = 12
+	munizioni_attuali = munizioni_massime
+	
+	cambia_soldato(soldier_index)
+	
+	if _hud:
+		_hud.imposta_arma(nome_arma)
+		_hud.imposta_modalita_sparo(modalita_sparo)
+	_aggiorna_hud_munizioni()
+	_audio_pickup.play()

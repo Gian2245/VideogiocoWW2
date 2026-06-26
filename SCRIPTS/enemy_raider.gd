@@ -20,6 +20,9 @@ var is_dodging: bool = false
 var dodge_can_land: bool = false           # prevents landing on the same frame the jump starts
 var dodge_land_delay: float = 0.0
 var jump_tween: Tween
+var shoot_tween: Tween
+var hurt_tween: Tween
+var idle_hframes: int = 6
 
 @onready var anim: AnimationPlayer = $AnimationPlayer
 @onready var sprite: Sprite2D = $Sprite2D
@@ -36,7 +39,8 @@ var jump_texture: Texture2D
 var is_dead := false
 
 var enemy_bullet_script = preload("res://SCRIPTS/ProiettileNemico.gd")
-var vest_scene = preload("res://scenes/vest_pickup.tscn")
+@export var drop_item_scene: PackedScene = preload("res://scenes/vest_pickup.tscn")
+@export var raider_index: int = 1
 
 var _audio_shoot: AudioStreamPlayer
 
@@ -44,11 +48,28 @@ func _ready() -> void:
 	health = max_health
 	add_to_group("enemies")
 
+	var base_path = "res://assets/Raider_" + str(raider_index) + "/"
+	var idle_path = base_path + "Idle.png"
+	if ResourceLoader.exists(idle_path):
+		sprite.texture = load(idle_path)
+
 	idle_texture = sprite.texture
-	hurt_texture = load("res://assets/Raider_1/Hurt.png")
-	dead_texture = load("res://assets/Raider_1/Dead.png")
-	shot_texture  = load("res://assets/Raider_1/Shot.png")
-	jump_texture  = load("res://assets/Raider_1/Jump.png")
+	var img = idle_texture.get_image()
+	if img != null:
+		idle_hframes = int(img.get_size().x / img.get_size().y)
+	else:
+		idle_hframes = 6
+	sprite.hframes = idle_hframes
+
+	hurt_texture = load(base_path + "Hurt.png")
+	dead_texture = load(base_path + "Dead.png")
+
+	var shot_path = base_path + "Shot.png"
+	if not ResourceLoader.exists(shot_path):
+		shot_path = base_path + "Shot_1.png"
+	shot_texture = load(shot_path)
+
+	jump_texture = load(base_path + "Jump.png")
 
 	_create_ui()
 	_create_tutorials()
@@ -202,6 +223,17 @@ func _shoot(player: Node2D) -> void:
 		bullet.scale.x = -1
 	get_parent().add_child(bullet)
 
+func _kill_sprite_tweens() -> void:
+	if shoot_tween and shoot_tween.is_valid():
+		shoot_tween.kill()
+		shoot_tween = null
+	if hurt_tween and hurt_tween.is_valid():
+		hurt_tween.kill()
+		hurt_tween = null
+	if jump_tween and jump_tween.is_valid():
+		jump_tween.kill()
+		jump_tween = null
+
 func _play_shoot() -> void:
 	is_shooting = true
 	anim.stop()
@@ -213,13 +245,14 @@ func _play_shoot() -> void:
 	sprite.hframes = frames
 	sprite.frame   = 0
 
-	var tween = create_tween()
-	tween.tween_property(sprite, "frame", frames - 1, 0.5)
-	tween.tween_callback(func():
+	_kill_sprite_tweens()
+	shoot_tween = create_tween()
+	shoot_tween.tween_property(sprite, "frame", frames - 1, 0.5)
+	shoot_tween.tween_callback(func():
 		is_shooting = false
 		if not is_dead:
 			sprite.texture = idle_texture
-			sprite.hframes = 6
+			sprite.hframes = idle_hframes
 			sprite.frame   = 0
 			anim.play("idle")
 	)
@@ -238,6 +271,7 @@ func _start_dodge(player: Node2D) -> void:
 		dir_away = 1
 	velocity.x = dir_away * dodge_push_x
 
+	_kill_sprite_tweens()
 	_play_jump()
 
 func _play_jump() -> void:
@@ -250,9 +284,6 @@ func _play_jump() -> void:
 	sprite.hframes = frames
 	sprite.frame   = 0
 
-	if jump_tween and jump_tween.is_valid():
-		jump_tween.kill()
-	# Loop the jump frames for the entire air time
 	jump_tween = create_tween().set_loops()
 	jump_tween.tween_property(sprite, "frame", frames - 1, 0.55)
 	jump_tween.tween_callback(func(): sprite.frame = 0)
@@ -260,12 +291,10 @@ func _play_jump() -> void:
 func _end_dodge() -> void:
 	is_dodging = false
 	velocity.x  = 0.0
-	if jump_tween and jump_tween.is_valid():
-		jump_tween.kill()
-		jump_tween = null
+	_kill_sprite_tweens()
 	if not is_dead:
 		sprite.texture = idle_texture
-		sprite.hframes = 6
+		sprite.hframes = idle_hframes
 		sprite.frame   = 0
 		anim.play("idle")
 
@@ -284,9 +313,7 @@ func take_damage(amount: int) -> void:
 
 func _play_hurt() -> void:
 	is_shooting = false   # being hit interrupts the shoot animation
-	if jump_tween and jump_tween.is_valid():
-		jump_tween.kill()
-		jump_tween = null
+	_kill_sprite_tweens()
 	anim.stop()
 	sprite.texture = hurt_texture
 	var img = hurt_texture.get_image()
@@ -296,12 +323,12 @@ func _play_hurt() -> void:
 	sprite.hframes = frames
 	sprite.frame   = 0
 
-	var tween = create_tween()
-	tween.tween_property(sprite, "frame", frames - 1, 0.4)
-	tween.tween_callback(func():
+	hurt_tween = create_tween()
+	hurt_tween.tween_property(sprite, "frame", frames - 1, 0.4)
+	hurt_tween.tween_callback(func():
 		if not is_dead:
 			sprite.texture = idle_texture
-			sprite.hframes = 6
+			sprite.hframes = idle_hframes
 			sprite.frame   = 0
 			anim.play("idle")
 	)
@@ -310,16 +337,14 @@ func die() -> void:
 	is_dead     = true
 	is_shooting = false
 	is_dodging  = false
-	if jump_tween and jump_tween.is_valid():
-		jump_tween.kill()
-		jump_tween = null
+	_kill_sprite_tweens()
 
 	set_physics_process(false)
 
-	if vest_scene:
-		var vest = vest_scene.instantiate()
-		vest.global_position = global_position + Vector2(0, 110)
-		get_parent().call_deferred("add_child", vest)
+	if drop_item_scene:
+		var drop = drop_item_scene.instantiate()
+		drop.global_position = global_position + Vector2(0, 110)
+		get_parent().call_deferred("add_child", drop)
 	$CollisionShape2D.set_deferred("disabled", true)
 	health_bar.visible = false
 
@@ -332,8 +357,8 @@ func die() -> void:
 	sprite.hframes = frames
 	sprite.frame   = 0
 
-	var tween = create_tween()
-	tween.tween_property(sprite, "frame", frames - 1, 0.6)
+	var death_tween = create_tween()
+	death_tween.tween_property(sprite, "frame", frames - 1, 0.6)
 
 	_show_tutorial("I nemici eliminati possono rilasciare oggetti che ti aiuteranno in battaglia")
 

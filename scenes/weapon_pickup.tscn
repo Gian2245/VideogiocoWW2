@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://dweaponpickupscene"]
+
+[ext_resource type="Script" path="res://SCRIPTS/weapon_pickup.gd" id="1_scr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_weapon"]
+size = Vector2(48, 24)
+
+[node name="WeaponPickup" type="Area2D"]
+z_index = 5
+scale = Vector2(3.2, 3.2)
+script = ExtResource("1_scr")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_weapon")

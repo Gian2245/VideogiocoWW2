@@ -14,4 +14,5 @@ func _on_body_entered(body: Node2D) -> void:
 
 	var win = get_tree().get_first_node_in_group("win_screen")
 	if win and win.has_method("mostra") and not win.visible:
+		await get_tree().create_timer(3.0).timeout
 		win.mostra()
