@@ -37,6 +37,22 @@ var sta_attaccando = false
 var _hud: Node
 var max_cam_x := -INF
 
+var _audio_theme: AudioStreamPlayer
+var _audio_shoot: AudioStreamPlayer
+var _audio_reload: AudioStreamPlayer
+var _audio_melee: AudioStreamPlayer
+var _audio_explosion: AudioStreamPlayer
+var _audio_footstep: AudioStreamPlayer
+var _audio_pickup: AudioStreamPlayer
+var _footstep_timer := 0.0
+const FOOTSTEP_INTERVAL = 60.0 / 100.0  # 100 BPM
+
+func _create_audio_player(path: String) -> AudioStreamPlayer:
+	var p = AudioStreamPlayer.new()
+	p.stream = load(path)
+	add_child(p)
+	return p
+
 func _ready() -> void:
 	munizioni_attuali = munizioni_massime
 	health = max_health
@@ -57,6 +73,20 @@ func _ready() -> void:
 	_aggiorna_hud_salute()
 	_aggiorna_hud_armatura()
 
+	_audio_theme     = _create_audio_player("res://assets/Audio/music/theme.wav")
+	_audio_shoot     = _create_audio_player("res://assets/Audio/sfx/shooting.wav")
+	_audio_reload    = _create_audio_player("res://assets/Audio/sfx/reload.wav")
+	_audio_melee     = _create_audio_player("res://assets/Audio/sfx/melee-hit.wav")
+	_audio_explosion = _create_audio_player("res://assets/Audio/sfx/explotion.wav")
+	_audio_footstep  = _create_audio_player("res://assets/Audio/sfx/footstep.wav")
+	_audio_pickup    = _create_audio_player("res://assets/Audio/sfx/pick-up-item.wav")
+
+	var theme_stream = _audio_theme.stream
+	if theme_stream is AudioStreamWAV:
+		theme_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	_audio_theme.play()
+
+
 func _physics_process(delta: float) -> void:
 	tempo_ultimo_tocco_destra += delta
 	tempo_ultimo_tocco_sinistra += delta
@@ -67,6 +97,8 @@ func _physics_process(delta: float) -> void:
 	if sta_attaccando:
 		if animated_sprite.animation == "granata" and Input.is_action_pressed("granata"):
 			carica_granata += delta
+		_audio_footstep.stop()
+		_footstep_timer = 0.0
 		velocity.x = 0
 		move_and_slide()
 		return
@@ -111,25 +143,46 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0, WALK_SPEED)
 
 	_gestisci_animazioni(direction)
+	_gestisci_footstep(direction, delta)
 	move_and_slide()
-	
+
 	# La telecamera avanza solo verso destra
 	var target_cam_x = global_position.x + camera_offset.x
 	if target_cam_x > max_cam_x:
 		max_cam_x = target_cam_x
-		
+
+	# Blocca avanzamento finché ci sono nemici vivi: nessuno deve uscire a sinistra
+	var half_view = (get_viewport_rect().size.x / 2.0) / player_camera.zoom.x
+	for enemy in get_tree().get_nodes_in_group("enemies"):
+		if enemy.get("is_dead") == true:
+			continue
+		var limit = enemy.global_position.x + half_view - 200.0
+		if max_cam_x > limit:
+			max_cam_x = limit
+
 	player_camera.global_position.x = max_cam_x
 	player_camera.global_position.y = global_position.y + camera_offset.y
-	
+
 	# Impedisce al giocatore di uscire dallo schermo a sinistra
-	var left_edge = player_camera.global_position.x - (get_viewport_rect().size.x / 2.0) / player_camera.zoom.x
+	var left_edge = player_camera.global_position.x - half_view
 	if global_position.x < left_edge + 30:
 		global_position.x = left_edge + 30
+
+func _gestisci_footstep(direction: float, delta: float) -> void:
+	if is_on_floor() and direction != 0:
+		_footstep_timer -= delta
+		if _footstep_timer <= 0.0:
+			_audio_footstep.play()
+			_footstep_timer = FOOTSTEP_INTERVAL
+	else:
+		_audio_footstep.stop()
+		_footstep_timer = 0.0
 
 func _inizia_attacco() -> void:
 	sta_attaccando = true
 	animated_sprite.play("attack")
-	
+	_audio_melee.play()
+
 	# Applica danno melee (35) ai nemici molto vicini davanti
 	var direction_x = -1.0 if animated_sprite.flip_h else 1.0
 	_applica_danno_frontale(35, 250.0, 150.0, direction_x, true)
@@ -139,6 +192,7 @@ func _inizia_sparo() -> void:
 	munizioni_attuali -= 1
 	_aggiorna_hud_munizioni()
 	animated_sprite.play("spara")
+	_audio_shoot.play()
 	
 	var direction_x = -1.0 if animated_sprite.flip_h else 1.0
 	
@@ -157,6 +211,7 @@ func _inizia_sparo() -> void:
 func _inizia_ricarica() -> void:
 	sta_attaccando = true
 	animated_sprite.play("ricarica")
+	_audio_reload.play()
 
 func _inizia_granata() -> void:
 	sta_attaccando = true
@@ -216,6 +271,7 @@ func _esplodi(pos_esplosione: Vector2) -> void:
 	explosion_fx.flip_h = animated_sprite.flip_h
 	explosion_fx.visible = true
 	explosion_fx.play("esplosione")
+	_audio_explosion.play()
 	
 	# Applica danno esplosione (Raggio di 200 pixel)
 	_applica_danno_esplosione(pos_esplosione, 200.0, 100)
@@ -305,9 +361,15 @@ func _aggiorna_hud_armatura() -> void:
 	if _hud.has_method("aggiorna_armatura"):
 		_hud.aggiorna_armatura(armor, max_armor)
 
+func _trigger_game_over() -> void:
+	var go_screen = get_tree().get_first_node_in_group("game_over_screen")
+	if go_screen and go_screen.has_method("mostra") and not go_screen.visible:
+		go_screen.mostra()
+
 func raccogli_giubbotto() -> void:
 	armor = max_armor
 	_aggiorna_hud_armatura()
+	_audio_pickup.play()
 
 func take_damage(amount: int) -> void:
 	if amount <= 0:
@@ -325,3 +387,5 @@ func take_damage(amount: int) -> void:
 	if amount > 0:
 		health = max(health - amount, 0)
 		_aggiorna_hud_salute()
+		if health <= 0:
+			_trigger_game_over()

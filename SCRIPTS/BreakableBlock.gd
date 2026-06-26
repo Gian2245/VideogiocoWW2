@@ -2,7 +2,8 @@ extends StaticBody2D
 
 @export var texture_to_use: Texture2D
 
-var hp: int = 20
+# Exactly 2 melee hits to break — damage amount is ignored, each call = 1 hit.
+var hp: int = 2
 
 func _ready() -> void:
 	if texture_to_use:
@@ -22,13 +23,30 @@ func _ready() -> void:
 			new_shape.size = texture_to_use.get_size()
 		$CollisionShape2D.shape = new_shape
 
-func take_damage(amount: int) -> void:
-	hp -= amount
-	
+func take_damage(_amount: int) -> void:
+	hp -= 1
+
 	if hp <= 0:
-		queue_free()
+		_break()
 	else:
-		# Animazione per indicare il danno (lampeggia di rosso)
-		var tween = create_tween()
-		$Sprite2D.modulate = Color(1, 0, 0, 1)
-		tween.tween_property($Sprite2D, "modulate", Color(1, 1, 1, 1), 0.2)
+		_hit_feedback()
+
+func _hit_feedback() -> void:
+	# Red flash
+	$Sprite2D.modulate = Color(1.0, 0.0, 0.0, 1.0)
+	var flash = create_tween()
+	flash.tween_property($Sprite2D, "modulate", Color(0.72, 0.52, 0.52, 1.0), 0.25)
+
+	# Upward bounce to indicate impact
+	var bounce = create_tween()
+	bounce.tween_property($Sprite2D, "position:y", -12.0, 0.08).set_ease(Tween.EASE_OUT)
+	bounce.tween_property($Sprite2D, "position:y",   0.0, 0.12).set_ease(Tween.EASE_IN)
+
+func _break() -> void:
+	# Disable collision immediately so the player isn't stuck
+	$CollisionShape2D.set_deferred("disabled", true)
+
+	# Quick scale-down then remove
+	var tween = create_tween()
+	tween.tween_property($Sprite2D, "scale", Vector2.ZERO, 0.15).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
+	tween.tween_callback(queue_free)

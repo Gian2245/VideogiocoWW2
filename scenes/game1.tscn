@@ -9,8 +9,14 @@
 [ext_resource type="Texture2D" uid="uid://cklnovg8rc275" path="res://assets/Blocchi/blocco3.png" id="7_tex3"]
 [ext_resource type="Texture2D" uid="uid://bmfybspwkwygf" path="res://assets/Blocchi/blocco4.png" id="8_tex4"]
 [ext_resource type="Texture2D" uid="uid://hdbjgq72pqhd" path="res://assets/Blocchi/blocco5.png" id="9_tex5"]
+[ext_resource type="Script" path="res://SCRIPTS/game_over_screen.gd" id="10_gos"]
+[ext_resource type="Script" path="res://SCRIPTS/win_screen.gd" id="11_ws"]
+[ext_resource type="Script" path="res://SCRIPTS/finish_zone.gd" id="12_fz"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_imevv"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_finish"]
+size = Vector2(100, 700)
 
 [node name="Game" type="Node" unique_id=290228096]
 
@@ -88,3 +94,16 @@ texture_to_use = ExtResource("8_tex4")
 position = Vector2(2110, 804)
 scale = Vector2(0.6, 0.6)
 texture_to_use = ExtResource("9_tex5")
+
+[node name="GameOverScreen" type="CanvasLayer" parent="."]
+script = ExtResource("10_gos")
+
+[node name="WinScreen" type="CanvasLayer" parent="."]
+script = ExtResource("11_ws")
+
+[node name="FinishZone" type="Area2D" parent="."]
+position = Vector2(5800, 650)
+script = ExtResource("12_fz")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="FinishZone"]
+shape = SubResource("RectangleShape2D_finish")
