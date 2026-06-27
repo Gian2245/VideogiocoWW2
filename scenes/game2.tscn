@@ -1,15 +1,14 @@
-[gd_scene format=3 uid="uid://oojom5gj8656"]
+[gd_scene format=3 uid="uid://d2sxkplyo6021"]
 
-[ext_resource type="Texture2D" uid="uid://bpq3mgmjgbo4s" path="res://assets/parallax image.png" id="1_hfnnm"]
+[ext_resource type="Texture2D" uid="uid://e7rk3yqqdgnd" path="res://assets/sfondolivello2.jpeg" id="1_hfnnm"]
 [ext_resource type="PackedScene" uid="uid://gnnmnduv2aaf" path="res://scenes/player_1.tscn" id="2_imevv"]
 [ext_resource type="PackedScene" uid="uid://y8qlg5spdxb5" path="res://scenes/HUD.tscn" id="3_hud"]
-[ext_resource type="PackedScene" uid="uid://tut0r14l00n3" path="res://scenes/TutorialZone.tscn" id="4_tutorial"]
 [ext_resource type="PackedScene" uid="uid://cxqjxx1112223" path="res://scenes/enemy_raider_1.tscn" id="5_enemy"]
 [ext_resource type="PackedScene" path="res://scenes/BreakableBlock.tscn" id="6_block"]
 [ext_resource type="Texture2D" uid="uid://cklnovg8rc275" path="res://assets/Blocchi/blocco3.png" id="7_tex3"]
 [ext_resource type="Texture2D" uid="uid://bmfybspwkwygf" path="res://assets/Blocchi/blocco4.png" id="8_tex4"]
 [ext_resource type="Texture2D" uid="uid://hdbjgq72pqhd" path="res://assets/Blocchi/blocco5.png" id="9_tex5"]
-[ext_resource type="Script" uid="uid://bwhf46ne7hvou" path="res://SCRIPTS/game_over_screen.gd" id="10_gos"]
+[ext_resource type="Script" path="res://SCRIPTS/game_over_screen.gd" id="10_gos"]
 [ext_resource type="Script" uid="uid://8kdmhu0na0rm" path="res://SCRIPTS/win_screen.gd" id="11_ws"]
 [ext_resource type="Script" uid="uid://cyjmw8nj71kqf" path="res://SCRIPTS/finish_zone.gd" id="12_fz"]
 [ext_resource type="PackedScene" uid="uid://mq5lcewn4w11" path="res://scenes/weapon_pickup.tscn" id="13_weapon"]
@@ -31,55 +30,25 @@ motion_scale = Vector2(0.8, 1)
 motion_mirroring = Vector2(2750, 0)
 
 [node name="Sfondo" type="TextureRect" parent="ParallaxBackground/ParallaxLayer" unique_id=568618319]
-offset_left = 1.0
-offset_top = -385.0
-offset_right = 2753.0
-offset_bottom = 1151.0
+offset_left = -409.0
+offset_top = -320.0
+offset_right = 2343.0
+offset_bottom = 1216.0
 texture = ExtResource("1_hfnnm")
 
 [node name="palyer" parent="." unique_id=1115481226 instance=ExtResource("2_imevv")]
-position = Vector2(159, 678)
+position = Vector2(-269.99997, 691.00006)
 scale = Vector2(3.2, 3.2)
 
 [node name="Pavimento" type="StaticBody2D" parent="." unique_id=1707241893]
-position = Vector2(140, 895)
+position = Vector2(167, 906)
 metadata/_edit_group_ = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Pavimento" unique_id=675610322]
 shape = SubResource("WorldBoundaryShape2D_imevv")
 
-[node name="TutorialRun" parent="." unique_id=562239879 instance=ExtResource("4_tutorial")]
-position = Vector2(771, 913)
-tutorial_text = "Premi due volte DESTRA
-per correre"
-
-[node name="TutorialJump" parent="." unique_id=1897925415 instance=ExtResource("4_tutorial")]
-position = Vector2(1693, 940)
-tutorial_text = "Premi SPAZIO
-per saltare"
-
-[node name="TutorialShoot" parent="." unique_id=327086078 instance=ExtResource("4_tutorial")]
-position = Vector2(2377, 924)
-tutorial_text = "Premi X
-per sparare"
-
-[node name="TutorialReload" parent="." unique_id=1285139997 instance=ExtResource("4_tutorial")]
-position = Vector2(3345, 907)
-tutorial_text = "Premi R
-per ricaricare"
-
-[node name="TutorialGrenade" parent="." unique_id=146169226 instance=ExtResource("4_tutorial")]
-position = Vector2(4113, 935)
-tutorial_text = "Premi G
-per lanciare una granata"
-
-[node name="TutorialMelee" parent="." unique_id=182668379 instance=ExtResource("4_tutorial")]
-position = Vector2(4676, 930)
-tutorial_text = "Premi Z
-per attaccare col coltello"
-
 [node name="EnemyRaider1" parent="." unique_id=1818115982 instance=ExtResource("5_enemy")]
-position = Vector2(5500, 700)
+position = Vector2(2299, 696)
 scale = Vector2(3.2, 3.2)
 
 [node name="EnemyRaider2" parent="." unique_id=1818115983 instance=ExtResource("5_enemy")]
@@ -94,30 +63,18 @@ position = Vector2(8500, 700)
 scale = Vector2(3.2, 3.2)
 drop_item_scene = ExtResource("14_medikit")
 
-[node name="TutorialPostCombat1" parent="." unique_id=900000001 instance=ExtResource("4_tutorial")]
-position = Vector2(9200, 913)
-tutorial_text = "Non male, te la cavi!"
-
-[node name="TutorialPostCombat2" parent="." unique_id=900000002 instance=ExtResource("4_tutorial")]
-position = Vector2(10000, 913)
-tutorial_text = "Ora inizia la missione vera e propria..."
-
-[node name="TutorialPostCombat3" parent="." unique_id=900000003 instance=ExtResource("4_tutorial")]
-position = Vector2(10800, 913)
-tutorial_text = "Buona fortuna, soldato. Avanza!"
-
 [node name="Blocco3" parent="." unique_id=1177158681 instance=ExtResource("6_block")]
-position = Vector2(1852.0001, 805.00006)
+position = Vector2(2516, 800)
 scale = Vector2(0.6, 0.6)
 texture_to_use = ExtResource("7_tex3")
 
 [node name="Blocco4" parent="." unique_id=1485187525 instance=ExtResource("6_block")]
-position = Vector2(1980, 804)
+position = Vector2(2696, 798.00006)
 scale = Vector2(0.6, 0.6)
 texture_to_use = ExtResource("8_tex4")
 
 [node name="Blocco5" parent="." unique_id=2013954851 instance=ExtResource("6_block")]
-position = Vector2(2110, 804)
+position = Vector2(2879, 795.00006)
 scale = Vector2(0.6, 0.6)
 texture_to_use = ExtResource("9_tex5")
 

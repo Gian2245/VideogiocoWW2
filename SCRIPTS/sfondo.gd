@@ -2,7 +2,7 @@ extends TextureRect
 
 @export var player_path: NodePath = ^"../palyer"
 @export_range(0.1, 2.0, 0.05) var scroll_factor := 1.0
-@export var second_texture: Texture2D = preload("res://assets/ChatGPT Image 28 mag 2026, 13_46_16.png")
+@export var second_texture: Texture2D
 @export_range(0.05, 2.0, 0.05) var transition_duration := 0.45
 
 var _player: Node2D
@@ -13,6 +13,9 @@ var _player_start_x := 0.0
 var _using_second_background := false
 
 func _ready() -> void:
+	if second_texture == null:
+		second_texture = texture
+		
 	_player = get_node_or_null(player_path) as Node2D
 	if _player == null:
 		push_warning("Sfondo: player non trovato. Controlla player_path.")
