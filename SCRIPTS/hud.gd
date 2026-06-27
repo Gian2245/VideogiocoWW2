@@ -43,6 +43,7 @@ var _style_seg_off_armor := StyleBoxFlat.new()
 
 func _ready() -> void:
 	_grenade_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_grenade_count_2.visible = false  # Nasconde il contatore duplicato
 	_setup_segment_styles()
 	_setup_armor_styles()
 	for child in _health_segments.get_children():
@@ -153,4 +154,4 @@ func imposta_modalita_sparo(modalita: String) -> void:
 func imposta_granate(quantita: int) -> void:
 	var testo := str(quantita)
 	_grenade_count.text = testo
-	_grenade_count_2.text = testo
+	# _grenade_count_2 è nascosto, non viene aggiornato

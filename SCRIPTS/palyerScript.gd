@@ -27,6 +27,8 @@ var armi_sbloccate: Array = [
 		"modalita_sparo": "Semi-Auto",
 		"munizioni_massime": 8,
 		"munizioni_attuali": 8,
+		"munizioni_riserva": 24,
+		"munizioni_riserva_massime": 24,
 		"danno": 20
 	}
 ]
@@ -274,39 +276,61 @@ func _inizia_granata() -> void:
 func _lancia_esplosione() -> void:
 	var verso := -1.0 if animated_sprite.flip_h else 1.0
 	
-	# Creiamo una granata visiva un po' più grande
+	# Creiamo una granata visiva
 	var granata = Polygon2D.new()
 	granata.polygon = PackedVector2Array([Vector2(-8,-8), Vector2(8,-8), Vector2(8,8), Vector2(-8,8)])
-	granata.color = Color(0.15, 0.15, 0.1) # Grigio scuro
+	granata.color = Color(0.15, 0.15, 0.1)
 	get_parent().add_child(granata)
 	
 	# Punto di partenza: circa la mano del giocatore
 	var start_pos = global_position + Vector2(40 * verso, -50)
 	granata.global_position = start_pos
 	
-	# Punto di arrivo: i piedi sul pavimento. Il pavimento reale è a Y + 240 pixel per via dello scale 3.2x
+	# --- FISICA REALISTICA ---
+	# Potenza: 0.0 (no carica) → 1.0 (carica massima 0.5s)
+	var power = clampf(carica_granata / 0.5, 0.0, 1.0)
+	
+	# Velocità scalare proporzionale alla carica (min 400, max 950 px/s)
+	var speed = lerp(400.0, 950.0, power)
+	
+	# Angolo fisso di 45° per massima gittata naturalistica
+	var angle_rad = deg_to_rad(45.0)
+	var vx = speed * cos(angle_rad) * verso
+	var vy = -speed * sin(angle_rad)  # negativo = verso l'alto
+
+	# Pavimento reale (i nemici sono a questa Y)
 	var floor_y = global_position.y + 240.0
-	
-	# Calcola distanza in base alla carica: 0s -> cade vicino, 0.5s -> lancio lontano
-	var power = min(carica_granata / 0.5, 1.0)
-	var distanza = 50.0 + power * 550.0
-	var end_pos = Vector2(global_position.x + (distanza * verso), floor_y) 
-	
-	# Altezza del picco della parabola
-	var peak_y = start_pos.y - 180.0
-	
-	# Animazione (Traiettoria a Parabola)
+
+	# Tempo di volo REALE con dislivello: risolve 0.5*g*t² + vy*t + (start_y - floor_y) = 0
+	# → prende la radice positiva (atterraggio futuro)
+	var qa = 0.5 * gravity
+	var qb = vy
+	var qc = start_pos.y - floor_y
+	var discriminant = qb * qb - 4.0 * qa * qc
+	var t_volo = (-qb + sqrt(discriminant)) / (2.0 * qa)
+
+	# Posizione finale: X calcolata con velocità costante, Y = pavimento reale
+	var end_pos = Vector2(start_pos.x + vx * t_volo, floor_y)
+
+	# Picco della parabola: avviene al tempo t_peak = -vy / gravity
+	var t_peak = -vy / gravity
+	var peak_y = start_pos.y + vy * t_peak + 0.5 * gravity * t_peak * t_peak
+	var t_down = t_volo - t_peak
+
+	# Tween orizzontale (lineare, costante)
 	var tween = create_tween()
-	tween.set_parallel(true)
-	
-	tween.tween_property(granata, "global_position:x", end_pos.x, 0.7)
-	
+	tween.tween_property(granata, "global_position:x", end_pos.x, t_volo)
+
+	# Tween verticale: salita fino al picco, poi discesa fino al pavimento
 	var tween_y = create_tween()
-	tween_y.tween_property(granata, "global_position:y", peak_y, 0.35).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-	tween_y.tween_property(granata, "global_position:y", end_pos.y, 0.35).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD).set_delay(0.35)
-	
+	tween_y.tween_property(granata, "global_position:y", peak_y, t_peak)\
+		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween_y.tween_property(granata, "global_position:y", end_pos.y, t_down)\
+		.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+
+	# Rotazione durante il volo
 	var tween_rot = create_tween()
-	tween_rot.tween_property(granata, "rotation", deg_to_rad(360 * 2 * verso), 0.7)
+	tween_rot.tween_property(granata, "rotation", deg_to_rad(360.0 * 2.5 * verso), t_volo)
 	
 	tween_y.finished.connect(func():
 		granata.queue_free()
@@ -392,7 +416,13 @@ func _on_animation_finished() -> void:
 		return
 
 	if animated_sprite.animation == "ricarica":
-		munizioni_attuali = munizioni_massime
+		# Preleva le munizioni necessarie dalla riserva
+		var arma = armi_sbloccate[indice_arma_attuale]
+		var mancanti = munizioni_massime - munizioni_attuali
+		var da_prelevare = min(mancanti, arma["munizioni_riserva"])
+		munizioni_attuali += da_prelevare
+		arma["munizioni_riserva"] -= da_prelevare
+		arma["munizioni_attuali"] = munizioni_attuali
 		_aggiorna_hud_munizioni()
 	elif animated_sprite.animation == "spara":
 		if modalita_sparo != "Semi-Auto" and Input.is_action_pressed("spara") and munizioni_attuali > 0:
@@ -408,7 +438,8 @@ func _on_animation_finished() -> void:
 func _aggiorna_hud_munizioni() -> void:
 	if _hud == null:
 		return
-	_hud.aggiorna_munizioni(munizioni_attuali, munizioni_massime, munizioni_massime)
+	var riserva = armi_sbloccate[indice_arma_attuale]["munizioni_riserva"]
+	_hud.aggiorna_munizioni(munizioni_attuali, munizioni_massime, riserva)
 
 func _aggiorna_hud_salute() -> void:
 	if _hud == null:
@@ -441,11 +472,12 @@ func raccogli_giubbotto() -> void:
 	_audio_pickup.play()
 
 func raccogli_munizioni() -> void:
-	munizioni_attuali = munizioni_massime
-	armi_sbloccate[indice_arma_attuale]["munizioni_attuali"] = munizioni_massime
+	# Ricarica la riserva dell'arma corrente fino al massimo
+	var arma = armi_sbloccate[indice_arma_attuale]
+	arma["munizioni_riserva"] = arma["munizioni_riserva_massime"]
 	_aggiorna_hud_munizioni()
 	_audio_pickup.play()
-	_mostra_tutorial("Munizioni per " + armi_sbloccate[indice_arma_attuale]["nome_arma"] + " trovate!", 2.0)
+	_mostra_tutorial("Munizioni per " + arma["nome_arma"] + " trovate!", 2.0)
 
 func raccogli_granata() -> void:
 	granate += 1
@@ -547,6 +579,8 @@ func raccogli_arma(soldier_index: int) -> void:
 			"modalita_sparo": "Automatico" if soldier_index != 1 else "Semi-Auto",
 			"munizioni_massime": 12 if soldier_index != 1 else 8,
 			"munizioni_attuali": 12 if soldier_index != 1 else 8,
+			"munizioni_riserva": 36 if soldier_index != 1 else 24,
+			"munizioni_riserva_massime": 36 if soldier_index != 1 else 24,
 			"danno": 35 if soldier_index != 1 else 20
 		})
 		armi_sbloccate[indice_arma_attuale]["munizioni_attuali"] = munizioni_attuali

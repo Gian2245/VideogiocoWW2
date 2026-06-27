@@ -41,13 +41,23 @@ func _build_ui() -> void:
 	subtitle.label_settings = ss
 	add_child(subtitle)
 
+	# --- Pulsante "Prossimo Livello" (centrato a destra) ---
 	var btn = Button.new()
 	btn.text = "Prossimo Livello  →"
-	btn.position = Vector2(490, 430)
-	btn.size = Vector2(300, 56)
-	btn.add_theme_font_size_override("font_size", 24)
+	btn.position = Vector2(660, 430)
+	btn.size = Vector2(280, 56)
+	btn.add_theme_font_size_override("font_size", 22)
 	btn.pressed.connect(_on_prossimo_livello)
 	add_child(btn)
+
+	# --- Pulsante "Rigioca Tutorial" (centrato a sinistra) ---
+	var btn_replay = Button.new()
+	btn_replay.text = "↺  Rigioca Tutorial"
+	btn_replay.position = Vector2(340, 430)
+	btn_replay.size = Vector2(280, 56)
+	btn_replay.add_theme_font_size_override("font_size", 22)
+	btn_replay.pressed.connect(_on_rigioca_tutorial)
+	add_child(btn_replay)
 
 	var coming_soon = Label.new()
 	coming_soon.name = "ComingSoon"
@@ -75,3 +85,7 @@ func _on_prossimo_livello() -> void:
 	else:
 		if has_node("ComingSoon"):
 			$ComingSoon.visible = true
+
+func _on_rigioca_tutorial() -> void:
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://scenes/game1.tscn")
