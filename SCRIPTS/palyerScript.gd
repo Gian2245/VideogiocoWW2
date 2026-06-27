@@ -385,7 +385,12 @@ func _on_animation_finished() -> void:
 	if is_dead and animated_sprite.animation == "morta":
 		_trigger_game_over()
 		return
-		
+
+	if animated_sprite.animation == "hurt":
+		sta_attaccando = false
+		animated_sprite.play("fermo")
+		return
+
 	if animated_sprite.animation == "ricarica":
 		munizioni_attuali = munizioni_massime
 		_aggiorna_hud_munizioni()
@@ -435,6 +440,26 @@ func raccogli_giubbotto() -> void:
 	_aggiorna_hud_armatura()
 	_audio_pickup.play()
 
+func raccogli_munizioni() -> void:
+	munizioni_attuali = munizioni_massime
+	armi_sbloccate[indice_arma_attuale]["munizioni_attuali"] = munizioni_massime
+	_aggiorna_hud_munizioni()
+	_audio_pickup.play()
+	_mostra_tutorial("Munizioni per " + armi_sbloccate[indice_arma_attuale]["nome_arma"] + " trovate!", 2.0)
+
+func raccogli_granata() -> void:
+	granate += 1
+	if _hud:
+		_hud.imposta_granate(granate)
+	_audio_pickup.play()
+	_mostra_tutorial("Granata trovata!", 2.0)
+
+func raccogli_medikit(quantita: int) -> void:
+	health = min(health + quantita, max_health)
+	_aggiorna_hud_salute()
+	_audio_pickup.play()
+	_mostra_tutorial("+" + str(quantita) + " HP", 2.0)
+
 func take_damage(amount: int) -> void:
 	if amount <= 0 or is_dead:
 		return
@@ -453,10 +478,15 @@ func take_damage(amount: int) -> void:
 		_aggiorna_hud_salute()
 		if health <= 0:
 			is_dead = true
+			sta_attaccando = false
 			if animated_sprite.sprite_frames.has_animation("morta"):
 				animated_sprite.play("morta")
 			else:
 				_trigger_game_over()
+		else:
+			sta_attaccando = false
+			if animated_sprite.sprite_frames.has_animation("hurt"):
+				animated_sprite.play("hurt")
 
 func cambia_soldato(indice: int) -> void:
 	var folder_nuovo = "res://assets/Soldier_" + str(indice) + "/"
@@ -522,6 +552,6 @@ func raccogli_arma(soldier_index: int) -> void:
 		armi_sbloccate[indice_arma_attuale]["munizioni_attuali"] = munizioni_attuali
 		indice_arma_attuale = armi_sbloccate.size() - 2
 		cambia_arma_successiva()
-		_mostra_tutorial("Hai raccolto una nuova arma!\\nPremi [ Q ] per cambiare arma in qualsiasi momento.", 6.0)
+		_mostra_tutorial("Hai raccolto una nuova arma! Premi [ Q ] per cambiare arma in qualsiasi momento.", 6.0)
 	else:
 		_audio_pickup.play()

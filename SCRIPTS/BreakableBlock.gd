@@ -43,10 +43,19 @@ func _hit_feedback() -> void:
 	bounce.tween_property($Sprite2D, "position:y",   0.0, 0.12).set_ease(Tween.EASE_IN)
 
 func _break() -> void:
-	# Disable collision immediately so the player isn't stuck
 	$CollisionShape2D.set_deferred("disabled", true)
 
-	# Quick scale-down then remove
+	_drop_loot()
+
 	var tween = create_tween()
 	tween.tween_property($Sprite2D, "scale", Vector2.ZERO, 0.15).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
 	tween.tween_callback(queue_free)
+
+func _drop_loot() -> void:
+	var loot_script = load("res://SCRIPTS/loot_pickup.gd")
+	var pickup = Area2D.new()
+	pickup.set_script(loot_script)
+	pickup.tipo = "munizioni" if randf() < 0.5 else "granata"
+	pickup.scale = Vector2(3.2, 3.2)
+	pickup.position = global_position + Vector2(0, -80)
+	get_parent().call_deferred("add_child", pickup)

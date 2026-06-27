@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://3qpg3h6at01y"]
+
+[ext_resource type="Script" path="res://SCRIPTS/medikit_pickup.gd" id="1_scr"]
+
+[node name="MedikitPickup" type="Area2D"]
+z_index = 5
+scale = Vector2(3.2, 3.2)
+script = ExtResource("1_scr")

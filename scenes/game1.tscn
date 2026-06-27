@@ -13,6 +13,7 @@
 [ext_resource type="Script" uid="uid://8kdmhu0na0rm" path="res://SCRIPTS/win_screen.gd" id="11_ws"]
 [ext_resource type="Script" uid="uid://cyjmw8nj71kqf" path="res://SCRIPTS/finish_zone.gd" id="12_fz"]
 [ext_resource type="PackedScene" uid="uid://mq5lcewn4w11" path="res://scenes/weapon_pickup.tscn" id="13_weapon"]
+[ext_resource type="PackedScene" uid="uid://3qpg3h6at01y" path="res://scenes/medikit_pickup.tscn" id="14_medikit"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_imevv"]
 
@@ -37,7 +38,7 @@ offset_bottom = 1151.0
 texture = ExtResource("1_hfnnm")
 
 [node name="palyer" parent="." unique_id=1115481226 instance=ExtResource("2_imevv")]
-position = Vector2(139, 645)
+position = Vector2(159, 678)
 scale = Vector2(3.2, 3.2)
 
 [node name="Pavimento" type="StaticBody2D" parent="." unique_id=1707241893]
@@ -78,14 +79,32 @@ tutorial_text = "Premi Z
 per attaccare col coltello"
 
 [node name="EnemyRaider1" parent="." unique_id=1818115982 instance=ExtResource("5_enemy")]
-position = Vector2(5337, 700)
+position = Vector2(5500, 700)
 scale = Vector2(3.2, 3.2)
 
 [node name="EnemyRaider2" parent="." unique_id=1818115983 instance=ExtResource("5_enemy")]
-position = Vector2(6100, 700)
+position = Vector2(7000, 700)
 scale = Vector2(3.2, 3.2)
 drop_item_scene = ExtResource("13_weapon")
 raider_index = 2
+death_tutorial_text = "Ha lasciato cadere il suo fucile! Avvicinati e premi [E] per raccoglierlo."
+
+[node name="EnemyRaider3" parent="." unique_id=1818115984 instance=ExtResource("5_enemy")]
+position = Vector2(8500, 700)
+scale = Vector2(3.2, 3.2)
+drop_item_scene = ExtResource("14_medikit")
+
+[node name="TutorialPostCombat1" parent="." unique_id=900000001 instance=ExtResource("4_tutorial")]
+position = Vector2(9200, 913)
+tutorial_text = "Non male, te la cavi!"
+
+[node name="TutorialPostCombat2" parent="." unique_id=900000002 instance=ExtResource("4_tutorial")]
+position = Vector2(10000, 913)
+tutorial_text = "Ora inizia la missione vera e propria..."
+
+[node name="TutorialPostCombat3" parent="." unique_id=900000003 instance=ExtResource("4_tutorial")]
+position = Vector2(10800, 913)
+tutorial_text = "Buona fortuna, soldato. Avanza!"
 
 [node name="Blocco3" parent="." unique_id=1177158681 instance=ExtResource("6_block")]
 position = Vector2(1852.0001, 805.00006)
@@ -109,7 +128,7 @@ script = ExtResource("10_gos")
 script = ExtResource("11_ws")
 
 [node name="FinishZone" type="Area2D" parent="." unique_id=1507688326]
-position = Vector2(6900, 650)
+position = Vector2(11400, 650)
 script = ExtResource("12_fz")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="FinishZone" unique_id=417275268]

@@ -41,6 +41,7 @@ var is_dead := false
 var enemy_bullet_script = preload("res://SCRIPTS/ProiettileNemico.gd")
 @export var drop_item_scene: PackedScene = preload("res://scenes/vest_pickup.tscn")
 @export var raider_index: int = 1
+@export var death_tutorial_text: String = "I nemici eliminati possono rilasciare oggetti che ti aiuteranno in battaglia"
 
 var _audio_shoot: AudioStreamPlayer
 
@@ -54,11 +55,7 @@ func _ready() -> void:
 		sprite.texture = load(idle_path)
 
 	idle_texture = sprite.texture
-	var img = idle_texture.get_image()
-	if img != null:
-		idle_hframes = int(img.get_size().x / img.get_size().y)
-	else:
-		idle_hframes = 6
+	idle_hframes = _hframes(idle_texture)
 	sprite.hframes = idle_hframes
 
 	hurt_texture = load(base_path + "Hurt.png")
@@ -81,6 +78,12 @@ func _ready() -> void:
 	_audio_shoot.stream = load("res://assets/Audio/sfx/shooting.wav")
 	_audio_shoot.volume_db = -10.0
 	add_child(_audio_shoot)
+
+func _hframes(tex: Texture2D) -> int:
+	if tex == null:
+		return 1
+	var h = tex.get_height()
+	return max(1, int(tex.get_width() / h)) if h > 0 else 1
 
 func _create_ui() -> void:
 	health_bar = ProgressBar.new()
@@ -238,10 +241,7 @@ func _play_shoot() -> void:
 	is_shooting = true
 	anim.stop()
 	sprite.texture = shot_texture
-	var img = shot_texture.get_image()
-	var frames = 1
-	if img != null:
-		frames = int(img.get_size().x / img.get_size().y)
+	var frames = _hframes(shot_texture)
 	sprite.hframes = frames
 	sprite.frame   = 0
 
@@ -277,10 +277,7 @@ func _start_dodge(player: Node2D) -> void:
 func _play_jump() -> void:
 	anim.stop()
 	sprite.texture = jump_texture
-	var img = jump_texture.get_image()
-	var frames = 1
-	if img != null:
-		frames = int(img.get_size().x / img.get_size().y)
+	var frames = _hframes(jump_texture)
 	sprite.hframes = frames
 	sprite.frame   = 0
 
@@ -316,10 +313,7 @@ func _play_hurt() -> void:
 	_kill_sprite_tweens()
 	anim.stop()
 	sprite.texture = hurt_texture
-	var img = hurt_texture.get_image()
-	var frames = 1
-	if img != null:
-		frames = int(img.get_size().x / img.get_size().y)
+	var frames = _hframes(hurt_texture)
 	sprite.hframes = frames
 	sprite.frame   = 0
 
@@ -350,17 +344,14 @@ func die() -> void:
 
 	anim.stop()
 	sprite.texture = dead_texture
-	var img = dead_texture.get_image()
-	var frames = 1
-	if img != null:
-		frames = int(img.get_size().x / img.get_size().y)
+	var frames = _hframes(dead_texture)
 	sprite.hframes = frames
 	sprite.frame   = 0
 
 	var death_tween = create_tween()
 	death_tween.tween_property(sprite, "frame", frames - 1, 0.6)
 
-	_show_tutorial("I nemici eliminati possono rilasciare oggetti che ti aiuteranno in battaglia")
+	_show_tutorial(death_tutorial_text)
 
 	await get_tree().create_timer(4.0).timeout
 	_hide_tutorial()

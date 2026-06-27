@@ -34,10 +34,28 @@ func _physics_process(delta: float) -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		return
-		
+
 	if body.is_in_group("enemies") or body.is_in_group("breakable"):
 		if body.has_method("take_damage") and body.get("is_dead") != true:
-			body.take_damage(danno)
+			if _is_on_screen(body):
+				body.take_damage(danno)
 		queue_free()
-	elif body is StaticBody2D: # Pavimento o casse non breakable
+	elif body is StaticBody2D:
 		queue_free()
+
+func _is_on_screen(target: Node2D) -> bool:
+	var players = get_tree().get_nodes_in_group("player")
+	if players.is_empty():
+		return true
+	var cam: Camera2D = players[0].get_node_or_null("Camera2D")
+	if cam == null:
+		return true
+	var half_w = (get_viewport_rect().size.x / 2.0) / cam.zoom.x
+	var half_h = (get_viewport_rect().size.y / 2.0) / cam.zoom.y
+	var cam_pos = cam.global_position
+	return (
+		target.global_position.x >= cam_pos.x - half_w and
+		target.global_position.x <= cam_pos.x + half_w and
+		target.global_position.y >= cam_pos.y - half_h and
+		target.global_position.y <= cam_pos.y + half_h
+	)
