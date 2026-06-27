@@ -18,6 +18,19 @@ var munizioni_attuali := 0
 var health := 100
 var armor := 0
 var ha_arma_nuova := false
+var is_dead := false
+
+var armi_sbloccate: Array = [
+	{
+		"soldier_index": 1,
+		"nome_arma": "AR11",
+		"modalita_sparo": "Semi-Auto",
+		"munizioni_massime": 8,
+		"munizioni_attuali": 8,
+		"danno": 20
+	}
+]
+var indice_arma_attuale: int = 0
 
 # --- VARIABILI PER IL DOPPIO TOCCO (DASH/RUN) ---
 var tempo_ultimo_tocco_destra = 0.0
@@ -38,6 +51,9 @@ var sta_attaccando = false
 var _hud: Node
 var max_cam_x := -INF
 
+var _tutorial_label: Label
+var _tutorial_tween: Tween
+
 var _audio_theme: AudioStreamPlayer
 var _audio_shoot: AudioStreamPlayer
 var _audio_reload: AudioStreamPlayer
@@ -55,6 +71,26 @@ func _create_audio_player(path: String) -> AudioStreamPlayer:
 	return p
 
 func _ready() -> void:
+	if not InputMap.has_action("cambia_arma"):
+		InputMap.add_action("cambia_arma")
+		var event = InputEventKey.new()
+		event.physical_keycode = KEY_Q
+		InputMap.action_add_event("cambia_arma", event)
+		
+	_tutorial_label = Label.new()
+	_tutorial_label.position = Vector2(-200, -160)
+	_tutorial_label.custom_minimum_size = Vector2(400, 0)
+	_tutorial_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_tutorial_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_tutorial_label.modulate.a = 0.0
+	
+	var settings = LabelSettings.new()
+	settings.font_size = 14
+	settings.outline_size = 4
+	settings.outline_color = Color.BLACK
+	_tutorial_label.label_settings = settings
+	add_child(_tutorial_label)
+		
 	munizioni_attuali = munizioni_massime
 	health = max_health
 	animated_sprite.animation_finished.connect(_on_animation_finished)
@@ -95,6 +131,11 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y += gravity * delta
 
+	if is_dead:
+		velocity.x = move_toward(velocity.x, 0, WALK_SPEED)
+		move_and_slide()
+		return
+
 	if sta_attaccando:
 		if animated_sprite.animation == "granata" and Input.is_action_pressed("granata"):
 			carica_granata += delta
@@ -118,16 +159,25 @@ func _physics_process(delta: float) -> void:
 	if Input.is_key_pressed(KEY_Z):
 		_inizia_attacco()
 		return
-	elif Input.is_action_pressed("spara") and munizioni_attuali > 0:
-		_inizia_sparo()
-		return
-	elif Input.is_action_just_pressed("ricarica"):
+	elif modalita_sparo == "Semi-Auto":
+		if Input.is_action_just_pressed("spara") and munizioni_attuali > 0:
+			_inizia_sparo()
+			return
+	else:
+		if Input.is_action_pressed("spara") and munizioni_attuali > 0:
+			_inizia_sparo()
+			return
+	
+	if Input.is_action_just_pressed("ricarica"):
 		if munizioni_attuali < munizioni_massime:
 			_inizia_ricarica()
 		return
 	elif Input.is_action_just_pressed("granata"):
 		if granate > 0:
 			_inizia_granata()
+		return
+	elif Input.is_action_just_pressed("cambia_arma"):
+		cambia_arma_successiva()
 		return
 
 	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
@@ -201,7 +251,7 @@ func _inizia_sparo() -> void:
 	var bullet = Area2D.new()
 	bullet.set_script(bullet_script)
 	bullet.velocity = Vector2(direction_x * 1600.0, 0)
-	bullet.danno = 35 if ha_arma_nuova else 20
+	bullet.danno = armi_sbloccate[indice_arma_attuale]["danno"]
 	bullet.global_position = global_position + Vector2(direction_x * 160, 85)
 	
 	if direction_x < 0:
@@ -332,11 +382,15 @@ func _gestisci_animazioni(direction: float) -> void:
 		animated_sprite.play("fermo")
 
 func _on_animation_finished() -> void:
+	if is_dead and animated_sprite.animation == "morta":
+		_trigger_game_over()
+		return
+		
 	if animated_sprite.animation == "ricarica":
 		munizioni_attuali = munizioni_massime
 		_aggiorna_hud_munizioni()
 	elif animated_sprite.animation == "spara":
-		if Input.is_action_pressed("spara") and munizioni_attuali > 0:
+		if modalita_sparo != "Semi-Auto" and Input.is_action_pressed("spara") and munizioni_attuali > 0:
 			_inizia_sparo()
 			return
 	elif animated_sprite.animation == "granata":
@@ -367,13 +421,22 @@ func _trigger_game_over() -> void:
 	if go_screen and go_screen.has_method("mostra") and not go_screen.visible:
 		go_screen.mostra()
 
+func _mostra_tutorial(testo: String, durata: float = 4.0) -> void:
+	_tutorial_label.text = testo
+	if _tutorial_tween and _tutorial_tween.is_valid():
+		_tutorial_tween.kill()
+	_tutorial_tween = create_tween()
+	_tutorial_tween.tween_property(_tutorial_label, "modulate:a", 1.0, 0.5)
+	_tutorial_tween.tween_interval(durata)
+	_tutorial_tween.tween_property(_tutorial_label, "modulate:a", 0.0, 0.5)
+
 func raccogli_giubbotto() -> void:
 	armor = max_armor
 	_aggiorna_hud_armatura()
 	_audio_pickup.play()
 
 func take_damage(amount: int) -> void:
-	if amount <= 0:
+	if amount <= 0 or is_dead:
 		return
 		
 	if armor > 0:
@@ -389,7 +452,11 @@ func take_damage(amount: int) -> void:
 		health = max(health - amount, 0)
 		_aggiorna_hud_salute()
 		if health <= 0:
-			_trigger_game_over()
+			is_dead = true
+			if animated_sprite.sprite_frames.has_animation("morta"):
+				animated_sprite.play("morta")
+			else:
+				_trigger_game_over()
 
 func cambia_soldato(indice: int) -> void:
 	var folder_nuovo = "res://assets/Soldier_" + str(indice) + "/"
@@ -411,17 +478,50 @@ func cambia_soldato(indice: int) -> void:
 						var new_atlas = load(new_path)
 						tex.atlas = new_atlas
 
-func raccogli_arma(soldier_index: int) -> void:
-	ha_arma_nuova = true
-	nome_arma = "STG44"
-	modalita_sparo = "Automatico"
-	munizioni_massime = 12
-	munizioni_attuali = munizioni_massime
+func cambia_arma_successiva() -> void:
+	if armi_sbloccate.size() <= 1 or sta_attaccando or is_dead:
+		return
 	
-	cambia_soldato(soldier_index)
+	armi_sbloccate[indice_arma_attuale]["munizioni_attuali"] = munizioni_attuali
+	indice_arma_attuale = (indice_arma_attuale + 1) % armi_sbloccate.size()
+	var nuova_arma = armi_sbloccate[indice_arma_attuale]
+	
+	nome_arma = nuova_arma["nome_arma"]
+	modalita_sparo = nuova_arma["modalita_sparo"]
+	munizioni_massime = nuova_arma["munizioni_massime"]
+	munizioni_attuali = nuova_arma["munizioni_attuali"]
+	
+	cambia_soldato(nuova_arma["soldier_index"])
 	
 	if _hud:
 		_hud.imposta_arma(nome_arma)
 		_hud.imposta_modalita_sparo(modalita_sparo)
 	_aggiorna_hud_munizioni()
 	_audio_pickup.play()
+
+func raccogli_arma(soldier_index: int) -> void:
+	var arma_trovata = false
+	for arma in armi_sbloccate:
+		if arma["soldier_index"] == soldier_index:
+			arma["munizioni_attuali"] = arma["munizioni_massime"]
+			arma_trovata = true
+			if arma == armi_sbloccate[indice_arma_attuale]:
+				munizioni_attuali = munizioni_massime
+				_aggiorna_hud_munizioni()
+			break
+			
+	if not arma_trovata:
+		armi_sbloccate.append({
+			"soldier_index": soldier_index,
+			"nome_arma": "STG44" if soldier_index != 1 else "AR11",
+			"modalita_sparo": "Automatico" if soldier_index != 1 else "Semi-Auto",
+			"munizioni_massime": 12 if soldier_index != 1 else 8,
+			"munizioni_attuali": 12 if soldier_index != 1 else 8,
+			"danno": 35 if soldier_index != 1 else 20
+		})
+		armi_sbloccate[indice_arma_attuale]["munizioni_attuali"] = munizioni_attuali
+		indice_arma_attuale = armi_sbloccate.size() - 2
+		cambia_arma_successiva()
+		_mostra_tutorial("Hai raccolto una nuova arma!\\nPremi [ Q ] per cambiare arma in qualsiasi momento.", 6.0)
+	else:
+		_audio_pickup.play()
