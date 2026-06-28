@@ -3,16 +3,10 @@
 [ext_resource type="Texture2D" uid="uid://e7rk3yqqdgnd" path="res://assets/sfondolivello2.jpeg" id="1_hfnnm"]
 [ext_resource type="PackedScene" uid="uid://gnnmnduv2aaf" path="res://scenes/player_1.tscn" id="2_imevv"]
 [ext_resource type="PackedScene" uid="uid://y8qlg5spdxb5" path="res://scenes/HUD.tscn" id="3_hud"]
-[ext_resource type="PackedScene" uid="uid://cxqjxx1112223" path="res://scenes/enemy_raider_1.tscn" id="5_enemy"]
-[ext_resource type="PackedScene" path="res://scenes/BreakableBlock.tscn" id="6_block"]
-[ext_resource type="Texture2D" uid="uid://cklnovg8rc275" path="res://assets/Blocchi/blocco3.png" id="7_tex3"]
-[ext_resource type="Texture2D" uid="uid://bmfybspwkwygf" path="res://assets/Blocchi/blocco4.png" id="8_tex4"]
-[ext_resource type="Texture2D" uid="uid://hdbjgq72pqhd" path="res://assets/Blocchi/blocco5.png" id="9_tex5"]
 [ext_resource type="Script" path="res://SCRIPTS/game_over_screen.gd" id="10_gos"]
 [ext_resource type="Script" uid="uid://8kdmhu0na0rm" path="res://SCRIPTS/win_screen.gd" id="11_ws"]
 [ext_resource type="Script" uid="uid://cyjmw8nj71kqf" path="res://SCRIPTS/finish_zone.gd" id="12_fz"]
-[ext_resource type="PackedScene" uid="uid://mq5lcewn4w11" path="res://scenes/weapon_pickup.tscn" id="13_weapon"]
-[ext_resource type="PackedScene" uid="uid://3qpg3h6at01y" path="res://scenes/medikit_pickup.tscn" id="14_medikit"]
+[ext_resource type="Script" path="res://SCRIPTS/game2_spawner.gd" id="16_spawner"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_imevv"]
 
@@ -47,36 +41,8 @@ metadata/_edit_group_ = true
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Pavimento" unique_id=675610322]
 shape = SubResource("WorldBoundaryShape2D_imevv")
 
-[node name="EnemyRaider1" parent="." unique_id=1818115982 instance=ExtResource("5_enemy")]
-position = Vector2(2299, 696)
-scale = Vector2(3.2, 3.2)
-
-[node name="EnemyRaider2" parent="." unique_id=1818115983 instance=ExtResource("5_enemy")]
-position = Vector2(7000, 700)
-scale = Vector2(3.2, 3.2)
-drop_item_scene = ExtResource("13_weapon")
-raider_index = 2
-death_tutorial_text = "Ha lasciato cadere il suo fucile! Avvicinati e premi [E] per raccoglierlo."
-
-[node name="EnemyRaider3" parent="." unique_id=1818115984 instance=ExtResource("5_enemy")]
-position = Vector2(8500, 700)
-scale = Vector2(3.2, 3.2)
-drop_item_scene = ExtResource("14_medikit")
-
-[node name="Blocco3" parent="." unique_id=1177158681 instance=ExtResource("6_block")]
-position = Vector2(2516, 800)
-scale = Vector2(0.6, 0.6)
-texture_to_use = ExtResource("7_tex3")
-
-[node name="Blocco4" parent="." unique_id=1485187525 instance=ExtResource("6_block")]
-position = Vector2(2696, 798.00006)
-scale = Vector2(0.6, 0.6)
-texture_to_use = ExtResource("8_tex4")
-
-[node name="Blocco5" parent="." unique_id=2013954851 instance=ExtResource("6_block")]
-position = Vector2(2879, 795.00006)
-scale = Vector2(0.6, 0.6)
-texture_to_use = ExtResource("9_tex5")
+[node name="Game2Spawner" type="Node" parent="."]
+script = ExtResource("16_spawner")
 
 [node name="GameOverScreen" type="CanvasLayer" parent="." unique_id=130636057]
 script = ExtResource("10_gos")
@@ -85,7 +51,7 @@ script = ExtResource("10_gos")
 script = ExtResource("11_ws")
 
 [node name="FinishZone" type="Area2D" parent="." unique_id=1507688326]
-position = Vector2(11400, 650)
+position = Vector2(30000, 650)
 script = ExtResource("12_fz")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="FinishZone" unique_id=417275268]

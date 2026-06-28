@@ -80,6 +80,10 @@ func mostra() -> void:
 
 func _on_prossimo_livello() -> void:
 	if ResourceLoader.exists("res://scenes/game2.tscn"):
+		# Salva l'inventario del giocatore prima di cambiare livello
+		var player = get_tree().get_first_node_in_group("player")
+		if player:
+			PlayerData.salva_da_player(player)
 		get_tree().paused = false
 		get_tree().change_scene_to_file("res://scenes/game2.tscn")
 	else:

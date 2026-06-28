@@ -42,6 +42,7 @@ var enemy_bullet_script = preload("res://SCRIPTS/ProiettileNemico.gd")
 @export var drop_item_scene: PackedScene = preload("res://scenes/vest_pickup.tscn")
 @export var raider_index: int = 1
 @export var death_tutorial_text: String = "I nemici eliminati possono rilasciare oggetti che ti aiuteranno in battaglia"
+@export var use_random_loot: bool = false
 
 var _audio_shoot: AudioStreamPlayer
 
@@ -131,7 +132,7 @@ func _create_tutorials() -> void:
 
 func _on_approach_entered(body: Node2D) -> void:
 	if is_dead: return
-	if body.is_in_group("player"):
+	if body.is_in_group("player") and death_tutorial_text != "":
 		_show_tutorial("Attenzione, nemico in vista, eliminalo!")
 
 func _on_approach_exited(body: Node2D) -> void:
@@ -335,7 +336,9 @@ func die() -> void:
 
 	set_physics_process(false)
 
-	if drop_item_scene:
+	if use_random_loot:
+		_drop_random_loot()
+	elif drop_item_scene:
 		var drop = drop_item_scene.instantiate()
 		drop.global_position = global_position + Vector2(0, 110)
 		get_parent().call_deferred("add_child", drop)
@@ -351,12 +354,50 @@ func die() -> void:
 	var death_tween = create_tween()
 	death_tween.tween_property(sprite, "frame", frames - 1, 0.6)
 
-	_show_tutorial(death_tutorial_text)
+	if death_tutorial_text != "":
+		_show_tutorial(death_tutorial_text)
 
 	await get_tree().create_timer(4.0).timeout
-	_hide_tutorial()
+	if death_tutorial_text != "":
+		_hide_tutorial()
 
 	var fade = create_tween()
 	fade.tween_property(sprite, "modulate:a", 0.0, 1.0)
 	await fade.finished
 	queue_free()
+
+func _drop_random_loot() -> void:
+	var roll = randf()
+	var drop_pos = global_position + Vector2(0, 110)
+
+	if roll < 0.4:
+		# 40% — Niente
+		return
+	elif roll < 0.6:
+		# 20% — Munizioni
+		var loot_script = load("res://SCRIPTS/loot_pickup.gd")
+		var pickup = Area2D.new()
+		pickup.set_script(loot_script)
+		pickup.tipo = "munizioni"
+		pickup.scale = Vector2(3.2, 3.2)
+		pickup.position = drop_pos
+		get_parent().call_deferred("add_child", pickup)
+	elif roll < 0.75:
+		# 15% — Medikit
+		var medikit = load("res://scenes/medikit_pickup.tscn").instantiate()
+		medikit.position = drop_pos
+		get_parent().call_deferred("add_child", medikit)
+	elif roll < 0.9:
+		# 15% — Granata
+		var loot_script = load("res://SCRIPTS/loot_pickup.gd")
+		var pickup = Area2D.new()
+		pickup.set_script(loot_script)
+		pickup.tipo = "granata"
+		pickup.scale = Vector2(3.2, 3.2)
+		pickup.position = drop_pos
+		get_parent().call_deferred("add_child", pickup)
+	else:
+		# 10% — Giubbotto antiproiettile
+		var vest = load("res://scenes/vest_pickup.tscn").instantiate()
+		vest.position = drop_pos
+		get_parent().call_deferred("add_child", vest)
