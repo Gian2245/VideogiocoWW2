@@ -125,6 +125,16 @@ func _ready() -> void:
 		theme_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	_audio_theme.play()
 
+	# Carica l'inventario salvato dal livello precedente (se presente)
+	if PlayerData.has_saved_data:
+		PlayerData.carica_su_player(self)
+		_aggiorna_hud_munizioni()
+		_aggiorna_hud_salute()
+		_aggiorna_hud_armatura()
+		if _hud:
+			_hud.imposta_arma(nome_arma)
+			_hud.imposta_modalita_sparo(modalita_sparo)
+			_hud.imposta_granate(granate)
 
 func _physics_process(delta: float) -> void:
 	tempo_ultimo_tocco_destra += delta
