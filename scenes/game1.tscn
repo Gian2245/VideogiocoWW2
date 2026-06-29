@@ -38,11 +38,11 @@ offset_bottom = 1151.0
 texture = ExtResource("1_hfnnm")
 
 [node name="palyer" parent="." unique_id=1115481226 instance=ExtResource("2_imevv")]
-position = Vector2(159, 678)
+position = Vector2(357, 723)
 scale = Vector2(3.2, 3.2)
 
 [node name="Pavimento" type="StaticBody2D" parent="." unique_id=1707241893]
-position = Vector2(140, 895)
+position = Vector2(322, 929)
 metadata/_edit_group_ = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Pavimento" unique_id=675610322]
@@ -54,7 +54,7 @@ tutorial_text = "Premi due volte DESTRA
 per correre"
 
 [node name="TutorialJump" parent="." unique_id=1897925415 instance=ExtResource("4_tutorial")]
-position = Vector2(1693, 940)
+position = Vector2(1705, 922)
 tutorial_text = "Premi SPAZIO
 per saltare"
 
@@ -107,17 +107,17 @@ position = Vector2(10800, 913)
 tutorial_text = "Buona fortuna, soldato. Avanza!"
 
 [node name="Blocco3" parent="." unique_id=1177158681 instance=ExtResource("6_block")]
-position = Vector2(1852.0001, 805.00006)
+position = Vector2(2007, 820)
 scale = Vector2(0.6, 0.6)
 texture_to_use = ExtResource("7_tex3")
 
 [node name="Blocco4" parent="." unique_id=1485187525 instance=ExtResource("6_block")]
-position = Vector2(1980, 804)
+position = Vector2(1406, 831)
 scale = Vector2(0.6, 0.6)
 texture_to_use = ExtResource("8_tex4")
 
 [node name="Blocco5" parent="." unique_id=2013954851 instance=ExtResource("6_block")]
-position = Vector2(2110, 804)
+position = Vector2(1727, 825.00006)
 scale = Vector2(0.6, 0.6)
 texture_to_use = ExtResource("9_tex5")
 

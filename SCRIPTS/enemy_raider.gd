@@ -6,7 +6,7 @@ var health: int = 100
 
 # --- SHOOTING ---
 @export var shoot_range: float = 600.0
-@export var shoot_cooldown: float = 2.5
+@export var shoot_cooldown: float = 1.0
 @export var bullet_damage: int = 15
 var shoot_timer: float = 1.5
 var is_shooting: bool = false
@@ -22,7 +22,18 @@ var dodge_land_delay: float = 0.0
 var jump_tween: Tween
 var shoot_tween: Tween
 var hurt_tween: Tween
+var walk_tween: Tween
 var idle_hframes: int = 6
+var is_walking: bool = false
+
+# --- CROUCH / STATE MACHINE ---
+enum EnemyState { ADVANCE, CROUCH, STAND }
+var _tact_state: EnemyState = EnemyState.ADVANCE
+var _state_timer: Timer
+var _col_node: CollisionShape2D
+var _col_shape: CapsuleShape2D
+var is_hurting: bool = false
+@export var advance_speed: float = 80.0
 
 @onready var anim: AnimationPlayer = $AnimationPlayer
 @onready var sprite: Sprite2D = $Sprite2D
@@ -35,6 +46,7 @@ var hurt_texture: Texture2D
 var idle_texture: Texture2D
 var shot_texture: Texture2D
 var jump_texture: Texture2D
+var walk_texture: Texture2D
 
 var is_dead := false
 
@@ -68,12 +80,24 @@ func _ready() -> void:
 	shot_texture = load(shot_path)
 
 	jump_texture = load(base_path + "Jump.png")
+	var walk_path = base_path + "Walk.png"
+	if ResourceLoader.exists(walk_path):
+		walk_texture = load(walk_path)
 
 	_create_ui()
 	_create_tutorials()
 
 	if anim.has_animation("idle"):
 		anim.play("idle")
+
+	_col_node = $CollisionShape2D
+	_col_shape = _col_node.shape as CapsuleShape2D
+
+	_state_timer = Timer.new()
+	_state_timer.one_shot = true
+	add_child(_state_timer)
+	_state_timer.timeout.connect(_on_state_timer_timeout)
+	_state_timer.start(randf_range(2.0, 4.0))
 
 	_audio_shoot = AudioStreamPlayer.new()
 	_audio_shoot.stream = load("res://assets/Audio/sfx/shooting.wav")
@@ -174,30 +198,64 @@ func _physics_process(delta: float) -> void:
 	sprite.flip_h = player.global_position.x < global_position.x
 
 	shoot_timer -= delta
-	dodge_timer  -= delta
-
-	# --- JUMP DODGE: wait to leave the ground, then land when floor is reached again ---
-	if is_dodging:
-		if not dodge_can_land:
-			dodge_land_delay -= delta
-			if dodge_land_delay <= 0.0:
-				dodge_can_land = true
-		elif is_on_floor():
-			_end_dodge()
-		move_and_slide()
-		return
 
 	velocity.x = 0
 
-	# Dodge has priority; can't start while shooting animation is playing
-	if dodge_timer <= 0.0 and not is_shooting and _is_player_shooting_at_me(player):
-		_start_dodge(player)
-	elif shoot_timer <= 0.0 and not is_shooting:
-		var dist = abs(global_position.x - player.global_position.x)
-		if dist <= shoot_range:
-			_shoot(player)
+	var dist = abs(global_position.x - player.global_position.x)
+
+	match _tact_state:
+		EnemyState.CROUCH:
+			if shoot_timer <= 0.0 and not is_shooting and dist <= shoot_range:
+				_shoot(player)
+		_:
+			if shoot_timer <= 0.0 and not is_shooting and dist <= shoot_range:
+				_shoot(player)
+			# Avanza verso il giocatore anche mentre spara
+			if _tact_state == EnemyState.ADVANCE and dist > 150.0 and not is_hurting:
+				velocity.x = sign(player.global_position.x - global_position.x) * advance_speed
+
+	# Animazione di camminata: attiva solo quando non ci sono animazioni prioritarie
+	if not is_shooting and not is_hurting:
+		if velocity.x != 0.0 and not is_walking:
+			_play_walk()
+		elif velocity.x == 0.0 and is_walking:
+			_stop_walk()
 
 	move_and_slide()
+
+# --- STATE MACHINE ---
+func _on_state_timer_timeout() -> void:
+	match _tact_state:
+		EnemyState.ADVANCE:
+			_start_crouch()
+		EnemyState.CROUCH:
+			_start_stand()
+		EnemyState.STAND:
+			_start_advance()
+
+func _start_advance() -> void:
+	_tact_state = EnemyState.ADVANCE
+	_state_timer.start(randf_range(2.0, 4.0))
+
+func _start_crouch() -> void:
+	if is_dead or is_hurting:
+		_start_advance()
+		return
+	_tact_state = EnemyState.CROUCH
+	_stop_walk()
+	_state_timer.start(randf_range(1.5, 2.5))
+
+func _start_stand() -> void:
+	_tact_state = EnemyState.STAND
+	_state_timer.start(0.3)
+
+func _enter_crouch_visuals() -> void:
+	_col_node.position.y = 48.0
+	_col_shape.height = 32.0
+
+func _exit_crouch_visuals() -> void:
+	_col_node.position.y = 32.0
+	_col_shape.height = 64.0
 
 # True when the player's shoot animation is active and they are facing this enemy.
 func _is_player_shooting_at_me(player: Node2D) -> bool:
@@ -237,6 +295,10 @@ func _kill_sprite_tweens() -> void:
 	if jump_tween and jump_tween.is_valid():
 		jump_tween.kill()
 		jump_tween = null
+	if walk_tween and walk_tween.is_valid():
+		walk_tween.kill()
+		walk_tween = null
+	is_walking = false
 
 func _play_shoot() -> void:
 	is_shooting = true
@@ -286,6 +348,31 @@ func _play_jump() -> void:
 	jump_tween.tween_property(sprite, "frame", frames - 1, 0.55)
 	jump_tween.tween_callback(func(): sprite.frame = 0)
 
+func _play_walk() -> void:
+	if walk_texture == null:
+		return
+	is_walking = true
+	if walk_tween and walk_tween.is_valid():
+		walk_tween.kill()
+	anim.stop()
+	sprite.texture = walk_texture
+	var frames = _hframes(walk_texture)
+	sprite.hframes = frames
+	sprite.frame = 0
+	walk_tween = create_tween().set_loops()
+	walk_tween.tween_property(sprite, "frame", frames - 1, 0.5)
+	walk_tween.tween_callback(func(): sprite.frame = 0)
+
+func _stop_walk() -> void:
+	is_walking = false
+	if walk_tween and walk_tween.is_valid():
+		walk_tween.kill()
+		walk_tween = null
+	sprite.texture = idle_texture
+	sprite.hframes = idle_hframes
+	sprite.frame = 0
+	anim.play("idle")
+
 func _end_dodge() -> void:
 	is_dodging = false
 	velocity.x  = 0.0
@@ -310,7 +397,9 @@ func take_damage(amount: int) -> void:
 		_play_hurt()
 
 func _play_hurt() -> void:
-	is_shooting = false   # being hit interrupts the shoot animation
+	is_hurting = true
+	is_shooting = false
+	_exit_crouch_visuals()
 	_kill_sprite_tweens()
 	anim.stop()
 	sprite.texture = hurt_texture
@@ -321,6 +410,7 @@ func _play_hurt() -> void:
 	hurt_tween = create_tween()
 	hurt_tween.tween_property(sprite, "frame", frames - 1, 0.4)
 	hurt_tween.tween_callback(func():
+		is_hurting = false
 		if not is_dead:
 			sprite.texture = idle_texture
 			sprite.hframes = idle_hframes
@@ -332,7 +422,10 @@ func die() -> void:
 	is_dead     = true
 	is_shooting = false
 	is_dodging  = false
+	is_hurting  = false
 	_kill_sprite_tweens()
+	_state_timer.stop()
+	_exit_crouch_visuals()
 
 	set_physics_process(false)
 

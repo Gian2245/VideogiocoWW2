@@ -1,12 +1,12 @@
 [gd_scene format=3 uid="uid://d2sxkplyo6021"]
 
-[ext_resource type="Texture2D" uid="uid://e7rk3yqqdgnd" path="res://assets/sfondolivello2.jpeg" id="1_hfnnm"]
+[ext_resource type="Texture2D" uid="uid://byunhs7u7ai6" path="res://assets/sfondolivello2_seamless_1280x720.png" id="1_hfnnm"]
 [ext_resource type="PackedScene" uid="uid://gnnmnduv2aaf" path="res://scenes/player_1.tscn" id="2_imevv"]
 [ext_resource type="PackedScene" uid="uid://y8qlg5spdxb5" path="res://scenes/HUD.tscn" id="3_hud"]
-[ext_resource type="Script" path="res://SCRIPTS/game_over_screen.gd" id="10_gos"]
+[ext_resource type="Script" uid="uid://bwhf46ne7hvou" path="res://SCRIPTS/game_over_screen.gd" id="10_gos"]
 [ext_resource type="Script" uid="uid://8kdmhu0na0rm" path="res://SCRIPTS/win_screen.gd" id="11_ws"]
 [ext_resource type="Script" uid="uid://cyjmw8nj71kqf" path="res://SCRIPTS/finish_zone.gd" id="12_fz"]
-[ext_resource type="Script" path="res://SCRIPTS/game2_spawner.gd" id="16_spawner"]
+[ext_resource type="Script" uid="uid://c3p1v0r4noptj" path="res://SCRIPTS/game2_spawner.gd" id="16_spawner"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_imevv"]
 
@@ -21,27 +21,27 @@ size = Vector2(100, 700)
 
 [node name="ParallaxLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=2121907396]
 motion_scale = Vector2(0.8, 1)
-motion_mirroring = Vector2(2750, 0)
+motion_mirroring = Vector2(2752, 0)
 
 [node name="Sfondo" type="TextureRect" parent="ParallaxBackground/ParallaxLayer" unique_id=568618319]
-offset_left = -409.0
-offset_top = -320.0
-offset_right = 2343.0
-offset_bottom = 1216.0
+offset_left = 1.0
+offset_top = -385.0
+offset_right = 2753.0
+offset_bottom = 1151.0
 texture = ExtResource("1_hfnnm")
 
 [node name="palyer" parent="." unique_id=1115481226 instance=ExtResource("2_imevv")]
-position = Vector2(-269.99997, 691.00006)
+position = Vector2(126, 716)
 scale = Vector2(3.2, 3.2)
 
 [node name="Pavimento" type="StaticBody2D" parent="." unique_id=1707241893]
-position = Vector2(167, 906)
+position = Vector2(96, 920)
 metadata/_edit_group_ = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Pavimento" unique_id=675610322]
 shape = SubResource("WorldBoundaryShape2D_imevv")
 
-[node name="Game2Spawner" type="Node" parent="."]
+[node name="Game2Spawner" type="Node" parent="." unique_id=1357100533]
 script = ExtResource("16_spawner")
 
 [node name="GameOverScreen" type="CanvasLayer" parent="." unique_id=130636057]

@@ -19,6 +19,9 @@ var health := 100
 var armor := 0
 var ha_arma_nuova := false
 var is_dead := false
+var is_crouching: bool = false
+var _player_col_node: CollisionShape2D
+var _player_col_shape: CapsuleShape2D
 
 var armi_sbloccate: Array = [
 	{
@@ -93,6 +96,9 @@ func _ready() -> void:
 	_tutorial_label.label_settings = settings
 	add_child(_tutorial_label)
 		
+	_player_col_node = $CollisionShape2D
+	_player_col_shape = _player_col_node.shape as CapsuleShape2D
+
 	munizioni_attuali = munizioni_massime
 	health = max_health
 	animated_sprite.animation_finished.connect(_on_animation_finished)
@@ -157,6 +163,13 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
+	# --- CROUCH ---
+	var wants_crouch = Input.is_action_pressed("ui_down") and is_on_floor()
+	if wants_crouch and not is_crouching:
+		_enter_crouch()
+	elif not wants_crouch and is_crouching:
+		_exit_crouch()
+
 	if Input.is_action_just_pressed("ui_right"):
 		if tempo_ultimo_tocco_destra < SOGLIA_DOPPIO_TOCCO:
 			sta_correndo = true
@@ -192,13 +205,15 @@ func _physics_process(delta: float) -> void:
 		cambia_arma_successiva()
 		return
 
-	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
+	if Input.is_action_just_pressed("ui_accept") and is_on_floor() and not is_crouching:
 		velocity.y = JUMP_VELOCITY
 
 	var direction := Input.get_axis("ui_left", "ui_right")
 
 	if direction != 0:
 		velocità_attuale = RUN_SPEED if sta_correndo else WALK_SPEED
+		if is_crouching:
+			velocità_attuale *= 0.5
 		velocity.x = direction * velocità_attuale
 		animated_sprite.flip_h = direction < 0
 	else:
@@ -230,6 +245,16 @@ func _physics_process(delta: float) -> void:
 	var left_edge = player_camera.global_position.x - half_view
 	if global_position.x < left_edge + 30:
 		global_position.x = left_edge + 30
+
+func _enter_crouch() -> void:
+	is_crouching = true
+	_player_col_node.position = Vector2(-8, 41)
+	_player_col_shape.height = 46.0
+
+func _exit_crouch() -> void:
+	is_crouching = false
+	_player_col_node.position = Vector2(-8, 18)
+	_player_col_shape.height = 92.0
 
 func _gestisci_footstep(direction: float, delta: float) -> void:
 	if is_on_floor() and direction != 0:
@@ -521,6 +546,7 @@ func take_damage(amount: int) -> void:
 		if health <= 0:
 			is_dead = true
 			sta_attaccando = false
+			_exit_crouch()
 			if animated_sprite.sprite_frames.has_animation("morta"):
 				animated_sprite.play("morta")
 			else:
