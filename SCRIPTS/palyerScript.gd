@@ -29,7 +29,7 @@ var armi_sbloccate: Array = [
 		"munizioni_attuali": 8,
 		"munizioni_riserva": 24,
 		"munizioni_riserva_massime": 24,
-		"danno": 20
+		"danno": 35
 	}
 ]
 var indice_arma_attuale: int = 0
@@ -587,11 +587,11 @@ func raccogli_arma(soldier_index: int) -> void:
 			"soldier_index": soldier_index,
 			"nome_arma": "STG44" if soldier_index != 1 else "AR11",
 			"modalita_sparo": "Automatico" if soldier_index != 1 else "Semi-Auto",
-			"munizioni_massime": 12 if soldier_index != 1 else 8,
-			"munizioni_attuali": 12 if soldier_index != 1 else 8,
-			"munizioni_riserva": 36 if soldier_index != 1 else 24,
-			"munizioni_riserva_massime": 36 if soldier_index != 1 else 24,
-			"danno": 35 if soldier_index != 1 else 20
+			"munizioni_massime": 15 if soldier_index != 1 else 8,
+			"munizioni_attuali": 15 if soldier_index != 1 else 8,
+			"munizioni_riserva": 45 if soldier_index != 1 else 24,
+			"munizioni_riserva_massime": 45 if soldier_index != 1 else 24,
+			"danno": 20 if soldier_index != 1 else 35
 		})
 		armi_sbloccate[indice_arma_attuale]["munizioni_attuali"] = munizioni_attuali
 		indice_arma_attuale = armi_sbloccate.size() - 2
