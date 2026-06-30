@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://bwg4nmshcvgp8"]
+
+[ext_resource type="Texture2D" uid="uid://yhkmfrkplq3l" path="res://assets/sfondobossfight.png" id="1_bg"]
+[ext_resource type="PackedScene" uid="uid://gnnmnduv2aaf" path="res://scenes/player_1.tscn" id="2_player"]
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_floor"]
+
+[node name="BossScene" type="Node" unique_id=493268516]
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="." unique_id=1737734115]
+
+[node name="ParallaxLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=118609624]
+motion_scale = Vector2(0.8, 1)
+motion_mirroring = Vector2(4344, 0)
+
+[node name="Sfondo" type="TextureRect" parent="ParallaxBackground/ParallaxLayer" unique_id=676702666]
+offset_top = -200.0
+offset_right = 2172.0
+offset_bottom = 524.0
+scale = Vector2(2, 2)
+texture = ExtResource("1_bg")
+
+[node name="palyer" parent="." unique_id=1049049183 instance=ExtResource("2_player")]
+position = Vector2(158, 809)
+scale = Vector2(3.2, 3.2)
+
+[node name="Pavimento" type="StaticBody2D" parent="." unique_id=1859110920]
+position = Vector2(569, 1139)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Pavimento" unique_id=1310635424]
+position = Vector2(-68, -120)
+shape = SubResource("WorldBoundaryShape2D_floor")

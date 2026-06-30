@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ctr2vw7b550jm"
-path="res://.godot/imported/sfondoLivello2BossFight.jpeg-19f9bf1fe209995012a6d3471b9a54aa.ctex"
+uid="uid://yhkmfrkplq3l"
+path="res://.godot/imported/sfondobossfight.png-6377d0854e7cd96fd6104937262946a9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sfondoLivello2BossFight.jpeg"
-dest_files=["res://.godot/imported/sfondoLivello2BossFight.jpeg-19f9bf1fe209995012a6d3471b9a54aa.ctex"]
+source_file="res://assets/sfondobossfight.png"
+dest_files=["res://.godot/imported/sfondobossfight.png-6377d0854e7cd96fd6104937262946a9.ctex"]
 
 [params]
 
