@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://cryobmf1qeo67"]
+
+[ext_resource type="Script" uid="uid://u8gnixthm0pd" path="res://SCRIPTS/boss_tank.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://drlemvgagk61b" path="res://assets/BossFight/german_panzer4_merged1.png" id="2_tex"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tank"]
+size = Vector2(412.5, 205)
+
+[node name="BossTank" type="CharacterBody2D" unique_id=677647558]
+z_index = 5
+script = ExtResource("1_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1000702076]
+position = Vector2(-2, 12.000008)
+scale = Vector2(5.416667, 5.5149994)
+texture = ExtResource("2_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2134173306]
+position = Vector2(-27.75, -14.5)
+shape = SubResource("RectangleShape2D_tank")
+
+[node name="CannonMarker" type="Marker2D" parent="." unique_id=1483799472]
+position = Vector2(-750, -53)
+
+[node name="ShootTimer" type="Timer" parent="." unique_id=1417212778]

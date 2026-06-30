@@ -3,12 +3,19 @@
 [ext_resource type="Texture2D" uid="uid://yhkmfrkplq3l" path="res://assets/sfondobossfight.png" id="1_bg"]
 [ext_resource type="PackedScene" uid="uid://gnnmnduv2aaf" path="res://scenes/player_1.tscn" id="2_player"]
 [ext_resource type="PackedScene" uid="uid://y8qlg5spdxb5" path="res://scenes/HUD.tscn" id="3_hud"]
+[ext_resource type="PackedScene" uid="uid://cryobmf1qeo67" path="res://scenes/boss_tank.tscn" id="4_tank"]
+[ext_resource type="PackedScene" uid="uid://cxqjxx1112223" path="res://scenes/enemy_raider_1.tscn" id="5_raider"]
+[ext_resource type="Script" uid="uid://bwhf46ne7hvou" path="res://SCRIPTS/game_over_screen.gd" id="6_gos"]
+[ext_resource type="PackedScene" path="res://scenes/boss_hud.tscn" id="7_bhud"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_floor"]
 
 [node name="BossScene" type="Node" unique_id=493268516]
 
 [node name="HUD" parent="." unique_id=1293309440 instance=ExtResource("3_hud")]
+
+[node name="GameOverScreen" type="CanvasLayer" parent="." unique_id=987654321]
+script = ExtResource("6_gos")
 
 [node name="ParallaxBackground" type="ParallaxBackground" parent="." unique_id=1737734115]
 
@@ -33,3 +40,36 @@ position = Vector2(569, 1139)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Pavimento" unique_id=1310635424]
 position = Vector2(-68, -120)
 shape = SubResource("WorldBoundaryShape2D_floor")
+
+[node name="BossGroup" type="Node2D" parent="." unique_id=999999999]
+position = Vector2(4200, 0)
+
+[node name="BossTank" parent="BossGroup" unique_id=888888881 instance=ExtResource("4_tank")]
+position = Vector2(8, 627)
+
+[node name="Raider1" parent="BossGroup" unique_id=888888882 instance=ExtResource("5_raider")]
+position = Vector2(-319, 596)
+scale = Vector2(3.2, 3.2)
+death_tutorial_text = ""
+
+[node name="Raider2" parent="BossGroup" unique_id=888888883 instance=ExtResource("5_raider")]
+position = Vector2(361, 603)
+scale = Vector2(3.2, 3.2)
+raider_index = 2
+death_tutorial_text = ""
+
+[node name="Raider3" parent="BossGroup" unique_id=888888884 instance=ExtResource("5_raider")]
+position = Vector2(533, 596)
+scale = Vector2(3.2, 3.2)
+death_tutorial_text = ""
+
+[node name="Raider4" parent="BossGroup" unique_id=888888885 instance=ExtResource("5_raider")]
+position = Vector2(-492, 597)
+scale = Vector2(3.2, 3.2)
+raider_index = 2
+death_tutorial_text = ""
+
+[node name="Raider5" parent="BossGroup" unique_id=888888886 instance=ExtResource("5_raider")]
+position = Vector2(-655, 600)
+scale = Vector2(3.2, 3.2)
+death_tutorial_text = ""
