@@ -1,0 +1,34 @@
+This is a Godot 4.6 project (GDScript, GL Compatibility). Read CLAUDE.md first for full context.
+
+Implement a **Game Over** and **Win condition** system. Here are the exact requirements:
+
+---
+
+## 1. Game Over (player dies)
+
+- In `SCRIPTS/palyerScript.gd`, when the player's health reaches 0, emit a signal or call a method to trigger Game Over.
+- Add a **Game Over CanvasLayer** to `scenes/game1.tscn` with:
+  - A semi-transparent dark overlay (full screen)
+  - A "GAME OVER" label (large, centered)
+  - A "Restart" button that reloads `scenes/game1.tscn`
+- Freeze the game when Game Over triggers: set `get_tree().paused = true` and mark the CanvasLayer as `process_mode = PROCESS_MODE_ALWAYS` so the button still works while paused.
+
+## 2. Win condition (reach the end of the level)
+
+- Add a new `Area2D` node at the right end of the map in `game1.tscn` (call it `FinishZone`).
+- When the player's body enters it, trigger a **Win screen** (same approach as Game Over):
+  - Semi-transparent overlay
+  - "MISSIONE COMPLETATA" label (large, centered)
+  - A "Rigioca" button that reloads `scenes/game1.tscn`
+- Reuse the existing TutorialZone pattern (`tutorial_zone.gd`) as reference for the Area2D detection, but keep the Win screen logic in a separate script.
+
+## 3. HUD stays visible
+
+- Make sure the existing HUD (`hud.gd`, CanvasLayer) remains visible on both screens.
+
+## 4. Do NOT change
+
+- Player combat values, input actions, groups, or any existing script logic outside of adding the death trigger.
+- The parallax background, breakable blocks, or tutorial zones.
+
+Implement step by step. Show the changes to each file and the new scene structure. Do not break any existing functionality.

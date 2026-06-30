@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://gnnmnduv2aaf" path="res://scenes/player_1.tscn" id="2_imevv"]
 [ext_resource type="PackedScene" uid="uid://y8qlg5spdxb5" path="res://scenes/HUD.tscn" id="3_hud"]
 [ext_resource type="Script" uid="uid://bwhf46ne7hvou" path="res://SCRIPTS/game_over_screen.gd" id="10_gos"]
-[ext_resource type="Script" path="res://SCRIPTS/win_screen_2.gd" id="11_ws"]
+[ext_resource type="Script" uid="uid://pq2p56seiptg" path="res://SCRIPTS/win_screen_2.gd" id="11_ws"]
 [ext_resource type="Script" uid="uid://cyjmw8nj71kqf" path="res://SCRIPTS/finish_zone.gd" id="12_fz"]
 [ext_resource type="Script" uid="uid://c3p1v0r4noptj" path="res://SCRIPTS/game2_spawner.gd" id="16_spawner"]
 
@@ -35,7 +35,7 @@ position = Vector2(126, 716)
 scale = Vector2(3.2, 3.2)
 
 [node name="Pavimento" type="StaticBody2D" parent="." unique_id=1707241893]
-position = Vector2(96, 920)
+position = Vector2(106, 920)
 metadata/_edit_group_ = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Pavimento" unique_id=675610322]

@@ -1,8 +1,8 @@
 extends CharacterBody2D
 
 # --- VARIABILI DI MOVIMENTO CONFIGURABILI ---
-@export var WALK_SPEED = 300.0
-@export var RUN_SPEED = 550.0
+@export var WALK_SPEED = 360.0
+@export var RUN_SPEED = 660.0
 @export var JUMP_VELOCITY = -750.0
 @export var munizioni_massime := 8
 @export var max_health := 100
@@ -14,6 +14,19 @@ extends CharacterBody2D
 @export var modalita_sparo := "Semi-Auto"
 
 var velocità_attuale = WALK_SPEED
+
+# --- MODALITÀ ADRENALINA ---
+const ADRENALINA_MASSIMA := 5.0        # carica necessaria per attivare la barra
+const ADRENALINA_DURATA := 5.0         # durata/decadimento in secondi della modalità
+const ADRENALINA_MOLT_VELOCITA := 1.4  # quanto si va più veloci
+const ADRENALINA_MOLT_DANNO := 2       # danno raddoppiato
+const ADRENALINA_GUADAGNO_FUOCO := 1.0 # carica per uccisione con arma da fuoco
+const ADRENALINA_GUADAGNO_MELEE := 1.5 # +50% per uccisione corpo a corpo
+var adrenalina_carica := 0.0           # carica accumulata (0..ADRENALINA_MASSIMA)
+var in_adrenalina := false
+var adrenalina_timer := 0.0
+var _zoom_tween: Tween
+
 var munizioni_attuali := 0
 var health := 100
 var armor := 0
@@ -59,13 +72,13 @@ var max_cam_x := -INF
 var _tutorial_label: Label
 var _tutorial_tween: Tween
 
-var _audio_theme: AudioStreamPlayer
 var _audio_shoot: AudioStreamPlayer
 var _audio_reload: AudioStreamPlayer
 var _audio_melee: AudioStreamPlayer
 var _audio_explosion: AudioStreamPlayer
 var _audio_footstep: AudioStreamPlayer
 var _audio_pickup: AudioStreamPlayer
+var _audio_adrenalina: AudioStreamPlayer
 var _footstep_timer := 0.0
 const FOOTSTEP_INTERVAL = 60.0 / 100.0  # 100 BPM
 
@@ -81,7 +94,13 @@ func _ready() -> void:
 		var event = InputEventKey.new()
 		event.physical_keycode = KEY_Q
 		InputMap.action_add_event("cambia_arma", event)
-		
+
+	if not InputMap.has_action("adrenalina"):
+		InputMap.add_action("adrenalina")
+		var event_adr = InputEventKey.new()
+		event_adr.physical_keycode = KEY_H
+		InputMap.action_add_event("adrenalina", event_adr)
+
 	_tutorial_label = Label.new()
 	_tutorial_label.position = Vector2(-200, -160)
 	_tutorial_label.custom_minimum_size = Vector2(400, 0)
@@ -117,19 +136,16 @@ func _ready() -> void:
 	_aggiorna_hud_munizioni()
 	_aggiorna_hud_salute()
 	_aggiorna_hud_armatura()
+	if _hud and _hud.has_method("aggiorna_adrenalina"):
+		_hud.aggiorna_adrenalina(adrenalina_carica, ADRENALINA_MASSIMA)
 
-	_audio_theme     = _create_audio_player("res://assets/Audio/music/theme.wav")
 	_audio_shoot     = _create_audio_player("res://assets/Audio/sfx/shooting.wav")
 	_audio_reload    = _create_audio_player("res://assets/Audio/sfx/reload.wav")
 	_audio_melee     = _create_audio_player("res://assets/Audio/sfx/melee-hit.wav")
 	_audio_explosion = _create_audio_player("res://assets/Audio/sfx/explotion.wav")
 	_audio_footstep  = _create_audio_player("res://assets/Audio/sfx/footstep.wav")
 	_audio_pickup    = _create_audio_player("res://assets/Audio/sfx/pick-up-item.wav")
-
-	var theme_stream = _audio_theme.stream
-	if theme_stream is AudioStreamWAV:
-		theme_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-	_audio_theme.play()
+	_audio_adrenalina = _create_audio_player("res://assets/Audio/sfx/attivazione adrenalina.wav")
 
 	# Carica l'inventario salvato dal livello precedente (se presente)
 	if PlayerData.has_saved_data:
@@ -145,6 +161,8 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	tempo_ultimo_tocco_destra += delta
 	tempo_ultimo_tocco_sinistra += delta
+
+	_gestisci_adrenalina(delta)
 
 	if not is_on_floor():
 		velocity.y += gravity * delta
@@ -214,6 +232,8 @@ func _physics_process(delta: float) -> void:
 		velocità_attuale = RUN_SPEED if sta_correndo else WALK_SPEED
 		if is_crouching:
 			velocità_attuale *= 0.5
+		if in_adrenalina:
+			velocità_attuale *= ADRENALINA_MOLT_VELOCITA
 		velocity.x = direction * velocità_attuale
 		animated_sprite.flip_h = direction < 0
 	else:
@@ -273,7 +293,7 @@ func _inizia_attacco() -> void:
 
 	# Applica danno melee (35) ai nemici molto vicini davanti
 	var direction_x = -1.0 if animated_sprite.flip_h else 1.0
-	_applica_danno_frontale(35, 250.0, 150.0, direction_x, true)
+	_applica_danno_frontale(35 * _mult_danno(), 250.0, 150.0, direction_x, true)
 
 func _inizia_sparo() -> void:
 	sta_attaccando = true
@@ -288,7 +308,7 @@ func _inizia_sparo() -> void:
 	var bullet = Area2D.new()
 	bullet.set_script(bullet_script)
 	bullet.velocity = Vector2(direction_x * 1600.0, 0)
-	bullet.danno = armi_sbloccate[indice_arma_attuale]["danno"]
+	bullet.danno = armi_sbloccate[indice_arma_attuale]["danno"] * _mult_danno()
 	bullet.global_position = global_position + Vector2(direction_x * 160, 85)
 	
 	if direction_x < 0:
@@ -384,7 +404,7 @@ func _esplodi(pos_esplosione: Vector2) -> void:
 	_audio_explosion.play()
 	
 	# Applica danno esplosione (Raggio di 200 pixel)
-	_applica_danno_esplosione(pos_esplosione, 200.0, 100)
+	_applica_danno_esplosione(pos_esplosione, 200.0, 100 * _mult_danno())
 
 func _on_esplosione_finita() -> void:
 	explosion_fx.visible = false
@@ -407,7 +427,10 @@ func _applica_danno_frontale(danno: int, max_dist_x: float, max_dist_y: float, d
 	
 	for bersaglio in bersagli_validi:
 		var b = bersaglio.nodo
-		b.take_damage(danno)
+		if b.is_in_group("enemies"):
+			b.take_damage(danno, is_melee)
+		else:
+			b.take_damage(danno)
 		if not is_melee and b.is_in_group("breakable"):
 			break # Il proiettile si ferma sulla prima cassa colpita
 
@@ -526,6 +549,78 @@ func raccogli_medikit(quantita: int) -> void:
 	_aggiorna_hud_salute()
 	_audio_pickup.play()
 	_mostra_tutorial("+" + str(quantita) + " HP", 2.0)
+
+# --- ADRENALINA ---
+func _mult_danno() -> int:
+	return ADRENALINA_MOLT_DANNO if in_adrenalina else 1
+
+func _gestisci_adrenalina(delta: float) -> void:
+	if is_dead:
+		return
+	if in_adrenalina:
+		# Decadimento: la barra (tempo residuo) cala di continuo; le uccisioni la ricaricano
+		adrenalina_timer -= delta
+		if _hud and _hud.has_method("aggiorna_adrenalina"):
+			_hud.aggiorna_adrenalina(maxf(adrenalina_timer, 0.0), ADRENALINA_DURATA, true)
+		if adrenalina_timer <= 0.0:
+			_disattiva_adrenalina()
+	elif Input.is_action_just_pressed("adrenalina") and adrenalina_carica >= ADRENALINA_MASSIMA:
+		_attiva_adrenalina()
+
+# Chiamata dai nemici quando muoiono. da_melee = uccisione corpo a corpo (+50%)
+func registra_uccisione(da_melee: bool = false) -> void:
+	if is_dead:
+		return
+	var guadagno := ADRENALINA_GUADAGNO_MELEE if da_melee else ADRENALINA_GUADAGNO_FUOCO
+	if in_adrenalina:
+		# Durante la modalità ogni uccisione "rinnova l'onda" allungando il tempo residuo
+		adrenalina_timer = minf(adrenalina_timer + guadagno, ADRENALINA_DURATA)
+	else:
+		adrenalina_carica = minf(adrenalina_carica + guadagno, ADRENALINA_MASSIMA)
+		if _hud and _hud.has_method("aggiorna_adrenalina"):
+			_hud.aggiorna_adrenalina(adrenalina_carica, ADRENALINA_MASSIMA)
+
+func _attiva_adrenalina() -> void:
+	in_adrenalina = true
+	adrenalina_timer = ADRENALINA_DURATA
+	adrenalina_carica = 0.0  # consuma la carica
+
+	if _audio_adrenalina:
+		_audio_adrenalina.play()
+
+	# Rallentamento momentaneo (time-scale 0.85 per 0.5s reali)
+	Engine.time_scale = 0.85
+	get_tree().create_timer(0.5, true, false, true).timeout.connect(_ripristina_time_scale)
+
+	# Leggero zoom della telecamera per dare "peso" all'attivazione
+	if _zoom_tween and _zoom_tween.is_valid():
+		_zoom_tween.kill()
+	_zoom_tween = create_tween()
+	_zoom_tween.tween_property(player_camera, "zoom", camera_zoom * 1.12, 0.25).set_ease(Tween.EASE_OUT)
+
+	if _hud:
+		if _hud.has_method("imposta_filtro_adrenalina"):
+			_hud.imposta_filtro_adrenalina(true)
+		if _hud.has_method("aggiorna_adrenalina"):
+			_hud.aggiorna_adrenalina(adrenalina_timer, ADRENALINA_DURATA, true)
+
+func _disattiva_adrenalina() -> void:
+	in_adrenalina = false
+	adrenalina_timer = 0.0
+
+	if _zoom_tween and _zoom_tween.is_valid():
+		_zoom_tween.kill()
+	_zoom_tween = create_tween()
+	_zoom_tween.tween_property(player_camera, "zoom", camera_zoom, 0.4).set_ease(Tween.EASE_OUT)
+
+	if _hud:
+		if _hud.has_method("imposta_filtro_adrenalina"):
+			_hud.imposta_filtro_adrenalina(false)
+		if _hud.has_method("aggiorna_adrenalina"):
+			_hud.aggiorna_adrenalina(adrenalina_carica, ADRENALINA_MASSIMA)
+
+func _ripristina_time_scale() -> void:
+	Engine.time_scale = 1.0
 
 func take_damage(amount: int) -> void:
 	if amount <= 0 or is_dead:

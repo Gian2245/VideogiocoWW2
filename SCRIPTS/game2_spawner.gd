@@ -19,6 +19,11 @@ var _spawn_count: int = 0
 var _finished_spawning: bool = false
 
 var _enemy_scene: PackedScene = preload("res://scenes/enemy_raider_1.tscn")
+var _sniper_scene: PackedScene = preload("res://scenes/enemy_sniper.tscn")
+var _runner_scene: PackedScene = preload("res://scenes/enemy_runner.tscn")
+
+@export var sniper_chance: float = 0.25  # probabilità che un nemico spawnato sia un cecchino
+@export var runner_chance: float = 0.25  # probabilità che un nemico spawnato sia un runner
 
 func _ready() -> void:
 	await get_tree().process_frame
@@ -58,10 +63,17 @@ func _try_spawn() -> void:
 		var offset = randf_range(1200.0, 1600.0) + i * randf_range(300.0, 500.0)
 		var spawn_x = _player.global_position.x + offset
 
-		var enemy = _enemy_scene.instantiate()
+		var enemy
+		var roll = randf()
+		if roll < sniper_chance:
+			enemy = _sniper_scene.instantiate()
+		elif roll < sniper_chance + runner_chance:
+			enemy = _runner_scene.instantiate()
+		else:
+			enemy = _enemy_scene.instantiate()
+			enemy.raider_index = [1, 2].pick_random()
 		enemy.position = Vector2(spawn_x, 696)
 		enemy.scale = Vector2(3.2, 3.2)
-		enemy.raider_index = [1, 2].pick_random()
 		enemy.use_random_loot = true
 		enemy.drop_item_scene = null
 		enemy.death_tutorial_text = ""

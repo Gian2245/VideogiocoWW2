@@ -15,6 +15,15 @@ extends CanvasLayer
 @onready var _armor_glow: Panel = %ArmorGlow
 @onready var _armor_segments: HBoxContainer = %ArmorSegments
 
+@onready var _adrenaline_bar: ProgressBar = %AdrenalineBar
+@onready var _adrenaline_filter: ColorRect = %AdrenalineFilter
+var _adrenaline_pulse_tween: Tween
+var _adrenaline_filter_tween: Tween
+
+@onready var _timer_label: Label = %TimerLabel
+var _tempo_trascorso := 0.0
+var _timer_attivo := true
+
 const COLOR_NORMAL := Color(0.95, 0.95, 0.95, 1.0)
 const COLOR_DIM := Color(0.72, 0.72, 0.72, 1.0)
 const COLOR_EMPTY := Color(0.92, 0.28, 0.22, 1.0)
@@ -52,6 +61,23 @@ func _ready() -> void:
 	for child in _armor_segments.get_children():
 		if child is Panel:
 			_segment_panels_armor.append(child)
+
+func _process(delta: float) -> void:
+	if _timer_attivo:
+		_tempo_trascorso += delta
+		if _timer_label:
+			_timer_label.text = _format_tempo(_tempo_trascorso)
+
+# --- CRONOMETRO LIVELLO ---
+func get_tempo_trascorso() -> float:
+	return _tempo_trascorso
+
+func ferma_timer() -> void:
+	_timer_attivo = false
+
+func _format_tempo(secondi: float) -> String:
+	var totale := int(secondi)
+	return "%02d:%02d" % [totale / 60, totale % 60]
 
 func _setup_segment_styles() -> void:
 	_style_seg_on.set_border_width_all(1)
@@ -144,6 +170,37 @@ func _aggiorna_glow_armatura(ratio: float) -> void:
 	_armor_glow.modulate = SEG_ON_BLUE
 	_armor_glow.modulate.a = clampf(ratio * 0.85 + 0.1, 0.1, 0.85)
 	_armor_glow.anchor_right = clampf(ratio, 0.02, 1.0)
+
+func aggiorna_adrenalina(valore: float, massimo: float, in_modalita: bool = false) -> void:
+	if _adrenaline_bar == null:
+		return
+	_adrenaline_bar.max_value = massimo
+	_adrenaline_bar.value = valore
+	# Pulsa solo quando la carica è piena e pronta da attivare (fuori dalla modalità)
+	var pronta := (not in_modalita) and valore >= massimo
+	if pronta and (_adrenaline_pulse_tween == null or not _adrenaline_pulse_tween.is_valid()):
+		_adrenaline_pulse_tween = create_tween().set_loops()
+		_adrenaline_pulse_tween.tween_property(_adrenaline_bar, "modulate", Color(1.6, 1.6, 1.6), 0.4)
+		_adrenaline_pulse_tween.tween_property(_adrenaline_bar, "modulate", Color.WHITE, 0.4)
+	elif not pronta and _adrenaline_pulse_tween and _adrenaline_pulse_tween.is_valid():
+		_adrenaline_pulse_tween.kill()
+	if not pronta:
+		# Glow fisso più acceso durante la modalità, normale altrimenti
+		_adrenaline_bar.modulate = Color(1.3, 1.3, 1.3) if in_modalita else Color.WHITE
+
+func imposta_filtro_adrenalina(attivo: bool) -> void:
+	if _adrenaline_filter == null:
+		return
+	if _adrenaline_filter_tween and _adrenaline_filter_tween.is_valid():
+		_adrenaline_filter_tween.kill()
+	if attivo:
+		# Filtro verde pulsante su tutto lo schermo durante l'adrenalina
+		_adrenaline_filter_tween = create_tween().set_loops()
+		_adrenaline_filter_tween.tween_property(_adrenaline_filter, "color:a", 0.22, 0.5)
+		_adrenaline_filter_tween.tween_property(_adrenaline_filter, "color:a", 0.10, 0.5)
+	else:
+		_adrenaline_filter_tween = create_tween()
+		_adrenaline_filter_tween.tween_property(_adrenaline_filter, "color:a", 0.0, 0.3)
 
 func imposta_arma(nome: String) -> void:
 	_weapon_name.text = nome.to_upper()

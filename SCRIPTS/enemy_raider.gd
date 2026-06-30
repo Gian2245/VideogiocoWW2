@@ -8,8 +8,22 @@ var health: int = 100
 @export var shoot_range: float = 600.0
 @export var shoot_cooldown: float = 1.0
 @export var bullet_damage: int = 15
+@export var laser_preavviso: bool = false   # mostra un laser di puntamento prima dello sparo
+@export var tempo_preavviso: float = 0.8     # durata del laser prima del colpo
 var shoot_timer: float = 1.5
 var is_shooting: bool = false
+var _laser_attivo: Line2D = null
+var _preavviso_tween: Tween
+
+# --- MELEE (runner) ---
+@export var melee_only: bool = false      # se true: non spara, corre addosso e colpisce in mischia
+@export var melee_damage: int = 20
+@export var melee_cooldown: float = 1.0
+@export var melee_range: float = 160.0
+var melee_timer: float = 0.0
+var is_attacking: bool = false
+var _attacco_tween: Tween
+var attack_texture: Texture2D
 
 # --- DODGE / JUMP ---
 @export var jump_velocity: float = -700.0
@@ -33,7 +47,7 @@ var _state_timer: Timer
 var _col_node: CollisionShape2D
 var _col_shape: CapsuleShape2D
 var is_hurting: bool = false
-@export var advance_speed: float = 80.0
+@export var advance_speed: float = 96.0
 
 @onready var anim: AnimationPlayer = $AnimationPlayer
 @onready var sprite: Sprite2D = $Sprite2D
@@ -49,10 +63,13 @@ var jump_texture: Texture2D
 var walk_texture: Texture2D
 
 var is_dead := false
+var _ucciso_da_melee := false
 
 var enemy_bullet_script = preload("res://SCRIPTS/ProiettileNemico.gd")
 @export var drop_item_scene: PackedScene = preload("res://scenes/vest_pickup.tscn")
 @export var raider_index: int = 1
+# Se valorizzato (es. "Soldier_3") sovrascrive la cartella "Raider_<index>"
+@export var sprite_folder: String = ""
 @export var death_tutorial_text: String = "I nemici eliminati possono rilasciare oggetti che ti aiuteranno in battaglia"
 @export var use_random_loot: bool = false
 
@@ -62,7 +79,11 @@ func _ready() -> void:
 	health = max_health
 	add_to_group("enemies")
 
-	var base_path = "res://assets/Raider_" + str(raider_index) + "/"
+	var base_path: String
+	if sprite_folder != "":
+		base_path = "res://assets/" + sprite_folder + "/"
+	else:
+		base_path = "res://assets/Raider_" + str(raider_index) + "/"
 	var idle_path = base_path + "Idle.png"
 	if ResourceLoader.exists(idle_path):
 		sprite.texture = load(idle_path)
@@ -79,10 +100,18 @@ func _ready() -> void:
 		shot_path = base_path + "Shot_1.png"
 	shot_texture = load(shot_path)
 
-	jump_texture = load(base_path + "Jump.png")
+	var jump_path = base_path + "Jump.png"
+	if ResourceLoader.exists(jump_path):
+		jump_texture = load(jump_path)
 	var walk_path = base_path + "Walk.png"
 	if ResourceLoader.exists(walk_path):
 		walk_texture = load(walk_path)
+
+	var attack_path = base_path + "Attack_1.png"
+	if not ResourceLoader.exists(attack_path):
+		attack_path = base_path + "Attack.png"
+	if ResourceLoader.exists(attack_path):
+		attack_texture = load(attack_path)
 
 	_create_ui()
 	_create_tutorials()
@@ -197,6 +226,12 @@ func _physics_process(delta: float) -> void:
 	# Always face the player (runs even during jump/shoot)
 	sprite.flip_h = player.global_position.x < global_position.x
 
+	# Runner: corre verso il giocatore e attacca solo in mischia
+	if melee_only:
+		_comportamento_runner(player, delta)
+		move_and_slide()
+		return
+
 	shoot_timer -= delta
 
 	velocity.x = 0
@@ -205,10 +240,10 @@ func _physics_process(delta: float) -> void:
 
 	match _tact_state:
 		EnemyState.CROUCH:
-			if shoot_timer <= 0.0 and not is_shooting and dist <= shoot_range:
+			if shoot_timer <= 0.0 and not is_shooting and dist <= shoot_range and _is_on_screen():
 				_shoot(player)
 		_:
-			if shoot_timer <= 0.0 and not is_shooting and dist <= shoot_range:
+			if shoot_timer <= 0.0 and not is_shooting and dist <= shoot_range and _is_on_screen():
 				_shoot(player)
 			# Avanza verso il giocatore anche mentre spara
 			if _tact_state == EnemyState.ADVANCE and dist > 150.0 and not is_hurting:
@@ -269,13 +304,19 @@ func _is_player_shooting_at_me(player: Node2D) -> bool:
 # --- SHOOT ---
 func _shoot(player: Node2D) -> void:
 	shoot_timer = shoot_cooldown
-	_play_shoot()
-	_audio_shoot.play()
 
 	var dir_x = sign(player.global_position.x - global_position.x)
 	if dir_x == 0:
 		dir_x = 1
 
+	if laser_preavviso:
+		_preavviso_e_spara(dir_x)
+	else:
+		_play_shoot()
+		_audio_shoot.play()
+		_spawn_bullet(dir_x)
+
+func _spawn_bullet(dir_x: float) -> void:
 	var bullet = Area2D.new()
 	bullet.set_script(enemy_bullet_script)
 	bullet.velocity  = Vector2(dir_x * 900.0, 0)
@@ -284,6 +325,110 @@ func _shoot(player: Node2D) -> void:
 	if dir_x < 0:
 		bullet.scale.x = -1
 	get_parent().add_child(bullet)
+
+# --- LASER DI PREAVVISO (cecchino) ---
+func _preavviso_e_spara(dir_x: float) -> void:
+	is_shooting = true  # blocca nuovi spari finché non finisce il preavviso
+
+	var laser = Line2D.new()
+	laser.width = 2.0
+	laser.default_color = Color(1.0, 0.12, 0.12, 0.85)
+	laser.add_point(Vector2.ZERO)
+	laser.add_point(Vector2(dir_x * (shoot_range + 200.0), 0))
+	laser.z_index = 50
+	laser.global_position = global_position + Vector2(dir_x * 160, 80)
+	get_parent().add_child(laser)
+	_laser_attivo = laser
+
+	# Pulsazione del laser, poi parte il colpo
+	_preavviso_tween = create_tween().set_loops(2)
+	_preavviso_tween.tween_property(laser, "modulate:a", 1.0, tempo_preavviso / 4.0)
+	_preavviso_tween.tween_property(laser, "modulate:a", 0.2, tempo_preavviso / 4.0)
+	_preavviso_tween.finished.connect(func():
+		if is_instance_valid(_laser_attivo):
+			_laser_attivo.queue_free()
+		_laser_attivo = null
+		_preavviso_tween = null
+		is_shooting = false
+		if not is_dead:
+			_play_shoot()
+			_audio_shoot.play()
+			_spawn_bullet(dir_x)
+	)
+
+func _annulla_preavviso() -> void:
+	if _preavviso_tween and _preavviso_tween.is_valid():
+		_preavviso_tween.kill()
+	_preavviso_tween = null
+	if is_instance_valid(_laser_attivo):
+		_laser_attivo.queue_free()
+	_laser_attivo = null
+
+func _is_on_screen() -> bool:
+	var players = get_tree().get_nodes_in_group("player")
+	if players.is_empty():
+		return true
+	var cam: Camera2D = players[0].get_node_or_null("Camera2D")
+	if cam == null:
+		return true
+	var half_w = (get_viewport_rect().size.x / 2.0) / cam.zoom.x
+	return abs(global_position.x - cam.global_position.x) <= half_w
+
+# --- RUNNER (melee) ---
+func _comportamento_runner(player: Node2D, delta: float) -> void:
+	melee_timer -= delta
+	velocity.x = 0
+	if is_attacking or is_hurting:
+		return
+
+	var dist = abs(global_position.x - player.global_position.x)
+	if dist > melee_range:
+		# Corre verso il giocatore
+		velocity.x = sign(player.global_position.x - global_position.x) * advance_speed
+		if not is_walking:
+			_play_walk()
+	else:
+		if is_walking:
+			_stop_walk()
+		if melee_timer <= 0.0 and _is_on_screen():
+			_attacco_melee(player)
+
+func _attacco_melee(player: Node2D) -> void:
+	melee_timer = melee_cooldown
+	velocity.x = 0
+
+	# Senza sprite d'attacco: danno immediato
+	if attack_texture == null:
+		_applica_danno_melee(player)
+		return
+
+	is_attacking = true
+	_kill_sprite_tweens()
+	anim.stop()
+	sprite.texture = attack_texture
+	var frames = _hframes(attack_texture)
+	sprite.hframes = frames
+	sprite.frame = 0
+
+	_attacco_tween = create_tween()
+	_attacco_tween.tween_property(sprite, "frame", frames - 1, 0.35)
+	_attacco_tween.tween_callback(func():
+		is_attacking = false
+		_attacco_tween = null
+		if not is_dead:
+			# Danno solo se il giocatore è ancora a portata (finestra schivabile)
+			_applica_danno_melee(get_tree().get_first_node_in_group("player"))
+			sprite.texture = idle_texture
+			sprite.hframes = idle_hframes
+			sprite.frame = 0
+			anim.play("idle")
+	)
+
+func _applica_danno_melee(player: Node2D) -> void:
+	if player == null or not player.has_method("take_damage") or player.get("is_dead") == true:
+		return
+	if abs(global_position.x - player.global_position.x) <= melee_range:
+		player.take_damage(melee_damage)
 
 func _kill_sprite_tweens() -> void:
 	if shoot_tween and shoot_tween.is_valid():
@@ -298,6 +443,9 @@ func _kill_sprite_tweens() -> void:
 	if walk_tween and walk_tween.is_valid():
 		walk_tween.kill()
 		walk_tween = null
+	if _attacco_tween and _attacco_tween.is_valid():
+		_attacco_tween.kill()
+		_attacco_tween = null
 	is_walking = false
 
 func _play_shoot() -> void:
@@ -384,7 +532,7 @@ func _end_dodge() -> void:
 		anim.play("idle")
 
 # --- DAMAGE / DEATH (unchanged) ---
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, da_melee: bool = false) -> void:
 	if is_dead or amount <= 0: return
 
 	health -= amount
@@ -392,6 +540,7 @@ func take_damage(amount: int) -> void:
 	health_bar.visible = true
 
 	if health <= 0:
+		_ucciso_da_melee = da_melee
 		die()
 	else:
 		_play_hurt()
@@ -399,6 +548,8 @@ func take_damage(amount: int) -> void:
 func _play_hurt() -> void:
 	is_hurting = true
 	is_shooting = false
+	is_attacking = false
+	_annulla_preavviso()
 	_exit_crouch_visuals()
 	_kill_sprite_tweens()
 	anim.stop()
@@ -423,6 +574,13 @@ func die() -> void:
 	is_shooting = false
 	is_dodging  = false
 	is_hurting  = false
+	_annulla_preavviso()
+
+	# Carica la barra dell'adrenalina del giocatore (melee = +50%)
+	var players = get_tree().get_nodes_in_group("player")
+	if players.size() > 0 and players[0].has_method("registra_uccisione"):
+		players[0].registra_uccisione(_ucciso_da_melee)
+
 	_kill_sprite_tweens()
 	_state_timer.stop()
 	_exit_crouch_visuals()

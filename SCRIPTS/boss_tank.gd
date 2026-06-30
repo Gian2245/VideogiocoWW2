@@ -3,7 +3,7 @@ extends CharacterBody2D
 @export var max_hp: int = 500
 var current_hp: int
 
-@export var move_speed: float = 30.0
+@export var move_speed: float = 36.0
 @export var shoot_interval: float = 3.0
 
 var is_dead: bool = false
