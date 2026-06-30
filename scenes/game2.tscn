@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://gnnmnduv2aaf" path="res://scenes/player_1.tscn" id="2_imevv"]
 [ext_resource type="PackedScene" uid="uid://y8qlg5spdxb5" path="res://scenes/HUD.tscn" id="3_hud"]
 [ext_resource type="Script" uid="uid://bwhf46ne7hvou" path="res://SCRIPTS/game_over_screen.gd" id="10_gos"]
-[ext_resource type="Script" uid="uid://8kdmhu0na0rm" path="res://SCRIPTS/win_screen.gd" id="11_ws"]
+[ext_resource type="Script" path="res://SCRIPTS/win_screen_2.gd" id="11_ws"]
 [ext_resource type="Script" uid="uid://cyjmw8nj71kqf" path="res://SCRIPTS/finish_zone.gd" id="12_fz"]
 [ext_resource type="Script" uid="uid://c3p1v0r4noptj" path="res://SCRIPTS/game2_spawner.gd" id="16_spawner"]
 
@@ -51,7 +51,7 @@ script = ExtResource("10_gos")
 script = ExtResource("11_ws")
 
 [node name="FinishZone" type="Area2D" parent="." unique_id=1507688326]
-position = Vector2(30000, 650)
+position = Vector2(32000, 650)
 script = ExtResource("12_fz")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="FinishZone" unique_id=417275268]
