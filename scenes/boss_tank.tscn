@@ -20,6 +20,6 @@ position = Vector2(-27.75, -14.5)
 shape = SubResource("RectangleShape2D_tank")
 
 [node name="CannonMarker" type="Marker2D" parent="." unique_id=1483799472]
-position = Vector2(-750, -53)
+position = Vector2(-239, -72)
 
 [node name="ShootTimer" type="Timer" parent="." unique_id=1417212778]
