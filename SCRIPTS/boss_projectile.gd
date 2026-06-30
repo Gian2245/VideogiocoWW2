@@ -16,7 +16,7 @@ func _ready() -> void:
 	area_entered.connect(_on_area_entered)
 
 func _process(delta: float) -> void:
-	position += direction * speed * delta
+	global_position += direction * speed * delta
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
