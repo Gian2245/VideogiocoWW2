@@ -53,6 +53,11 @@ position = Vector2(771, 913)
 tutorial_text = "Premi due volte DESTRA
 per correre"
 
+[node name="TutorialCasse" parent="." unique_id=146169231 instance=ExtResource("4_tutorial")]
+position = Vector2(1200, 922)
+tutorial_text = "Rompi le casse quando le vedi,
+potrebbero contenere qualcosa di utile!"
+
 [node name="TutorialJump" parent="." unique_id=1897925415 instance=ExtResource("4_tutorial")]
 position = Vector2(1705, 922)
 tutorial_text = "Premi SPAZIO
