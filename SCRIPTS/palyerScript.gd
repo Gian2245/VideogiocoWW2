@@ -57,6 +57,17 @@ const SOGLIA_DOPPIO_TOCCO = 0.25
 var sta_correndo = false
 var carica_granata: float = 0.0
 
+# --- SCHIVATA ---
+const DODGE_DURATA     := 0.4    # secondi di invincibilità/dash
+const DODGE_COOLDOWN   := 1.2    # secondi prima di poter schivare di nuovo
+const DODGE_VELOCITA   := 700.0  # velocità laterale del dash
+const DODGE_ADR_BONUS  := 0.8    # adrenalina guadagnata per schivata riuscita
+var _dodge_timer    := 0.0       # tempo rimasto di schivata attiva
+var _dodge_cooldown := 0.0       # tempo rimasto di cooldown
+var is_dodging      := false
+var _dodge_dir      := 1.0       # direzione della schivata (+1 destra / -1 sinistra)
+var _colpo_in_arrivo_timer := 0.0  # secondi da quando un proiettile nemico ci ha sfiorato
+
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 @onready var animated_sprite = $AnimatedSprite2D
@@ -100,6 +111,12 @@ func _ready() -> void:
 		var event_adr = InputEventKey.new()
 		event_adr.physical_keycode = KEY_H
 		InputMap.action_add_event("adrenalina", event_adr)
+
+	if not InputMap.has_action("schivata"):
+		InputMap.add_action("schivata")
+		var event_dodge = InputEventKey.new()
+		event_dodge.physical_keycode = KEY_SHIFT
+		InputMap.action_add_event("schivata", event_dodge)
 
 	_tutorial_label = Label.new()
 	_tutorial_label.position = Vector2(-200, -160)
@@ -163,12 +180,18 @@ func _physics_process(delta: float) -> void:
 	tempo_ultimo_tocco_sinistra += delta
 
 	_gestisci_adrenalina(delta)
+	_aggiorna_schivata(delta)
 
 	if not is_on_floor():
 		velocity.y += gravity * delta
 
 	if is_dead:
 		velocity.x = move_toward(velocity.x, 0, WALK_SPEED)
+		move_and_slide()
+		return
+
+	if is_dodging:
+		velocity.x = _dodge_dir * DODGE_VELOCITA
 		move_and_slide()
 		return
 
@@ -223,6 +246,11 @@ func _physics_process(delta: float) -> void:
 		cambia_arma_successiva()
 		return
 
+	# SCHIVATA — Shift: solo a terra, non durante la schivata stessa, e col cooldown rispettato
+	if Input.is_action_just_pressed("schivata") and is_on_floor() and not is_dodging and _dodge_cooldown <= 0.0 and not is_dead:
+		_esegui_schivata()
+		return
+
 	if Input.is_action_just_pressed("ui_accept") and is_on_floor() and not is_crouching:
 		velocity.y = JUMP_VELOCITY
 
@@ -275,6 +303,53 @@ func _exit_crouch() -> void:
 	is_crouching = false
 	_player_col_node.position = Vector2(-8, 18)
 	_player_col_shape.height = 92.0
+
+func _esegui_schivata() -> void:
+	# Direzione: quella in cui ci si sta muovendo, altrimenti quella in cui si guarda
+	var direction := Input.get_axis("ui_left", "ui_right")
+	if direction == 0.0:
+		_dodge_dir = -1.0 if animated_sprite.flip_h else 1.0
+	else:
+		_dodge_dir = direction
+
+	is_dodging      = true
+	_dodge_timer    = DODGE_DURATA
+	_dodge_cooldown = DODGE_COOLDOWN
+
+	# Se c'era un proiettile in arrivo entro 0.6s → schivata perfetta → +adrenalina
+	if _colpo_in_arrivo_timer > 0.0:
+		_guadagna_adrenalina(DODGE_ADR_BONUS)
+
+	# Feedback visivo: il personaggio diventa semitrasparente durante il dash
+	modulate = Color(0.7, 0.85, 1.0, 0.65)
+
+func _aggiorna_schivata(delta: float) -> void:
+	if _dodge_cooldown > 0.0:
+		_dodge_cooldown -= delta
+
+	if _colpo_in_arrivo_timer > 0.0:
+		_colpo_in_arrivo_timer -= delta
+
+	if is_dodging:
+		_dodge_timer -= delta
+		if _dodge_timer <= 0.0:
+			is_dodging = false
+			modulate = Color.WHITE  # ripristina opacità normale
+
+# Chiamato dal proiettile nemico quando passa vicino al giocatore (ma non lo colpisce)
+# Permette di rilevare se il giocatore ha schivato attivamente
+func segnala_colpo_in_arrivo() -> void:
+	_colpo_in_arrivo_timer = 0.6
+
+func _guadagna_adrenalina(quantita: float) -> void:
+	if is_dead:
+		return
+	if in_adrenalina:
+		adrenalina_timer = minf(adrenalina_timer + quantita, ADRENALINA_DURATA)
+	else:
+		adrenalina_carica = minf(adrenalina_carica + quantita, ADRENALINA_MASSIMA)
+		if _hud and _hud.has_method("aggiorna_adrenalina"):
+			_hud.aggiorna_adrenalina(adrenalina_carica, ADRENALINA_MASSIMA)
 
 func _gestisci_footstep(direction: float, delta: float) -> void:
 	if is_on_floor() and direction != 0:
@@ -624,6 +699,9 @@ func _ripristina_time_scale() -> void:
 
 func take_damage(amount: int) -> void:
 	if amount <= 0 or is_dead:
+		return
+	# Durante la schivata il giocatore è invincibile
+	if is_dodging:
 		return
 		
 	if armor > 0:

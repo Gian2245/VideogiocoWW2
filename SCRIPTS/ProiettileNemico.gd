@@ -30,6 +30,10 @@ func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("enemies"):
 		return
 	if body.is_in_group("player"):
+		# Se il giocatore sta schivando: segnala il colpo sfiorato (per ricompensa adrenalina)
+		# e non applica danno (l'invincibilità è gestita da take_damage)
+		if body.has_method("segnala_colpo_in_arrivo"):
+			body.segnala_colpo_in_arrivo()
 		if body.has_method("take_damage"):
 			body.take_damage(danno)
 		queue_free()
