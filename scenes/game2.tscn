@@ -51,7 +51,7 @@ script = ExtResource("10_gos")
 script = ExtResource("11_ws")
 
 [node name="FinishZone" type="Area2D" parent="." unique_id=1507688326]
-position = Vector2(32000, 650)
+position = Vector2(26000, 650)
 script = ExtResource("12_fz")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="FinishZone" unique_id=417275268]

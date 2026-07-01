@@ -1,35 +1,41 @@
 extends Node
 
 # ============================================================
-# Game2 Spawner — Spawning basato sulla DISTANZA percorsa
-# X = 0     → 15000 : 1 nemico per spawn
-# X = 15000 → 25000 : 2 nemici per spawn
-# X = 25000 → 30000 : 3 nemici per spawn
-# X = 30000+        : stop spawning, FinishZone gestisce la vittoria
-# Spawn ogni 1500px, piazzati 1200-1600px avanti (fuori schermo).
+# Game2 Spawner — Sequenza fissa di sezioni.
+# Alterna tratti di sole casse da spaccare con "orde" di nemici,
+# invece del vecchio pattern piatto "1 cassa, 1 nemico" scalato
+# con la distanza. L'ultima sezione (5 casse) prepara la boss fight:
+# al suo completamento la FinishZone viene spostata subito dopo,
+# così il livello finisce lì.
 # ============================================================
 
-@export var spawn_distance: float = 1500.0
-@export var spawn_stop_x: float = 30000.0
-@export var crate_spawn_every: int = 2
+const SEZIONI := [
+	{"tipo": "crate", "quantita": 4},
+	{"tipo": "wave", "nemici": ["raider", "raider", "raider"]},
+	{"tipo": "crate", "quantita": 3},
+	{"tipo": "wave", "nemici": ["runner", "runner", "sniper", "sniper"]},
+	{"tipo": "crate", "quantita": 3},
+	{"tipo": "wave", "nemici": ["runner", "runner", "raider", "raider"]},
+	{"tipo": "crate", "quantita": 3},
+	{"tipo": "wave", "nemici": ["runner", "raider", "raider", "sniper", "sniper"]},
+	{"tipo": "crate", "quantita": 5},
+]
 
 var _player: Node2D
 var _next_spawn_x: float = 1500.0
-var _spawn_count: int = 0
+var _section_index: int = 0
 var _finished_spawning: bool = false
 
 var _enemy_scene: PackedScene = preload("res://scenes/enemy_raider_1.tscn")
 var _sniper_scene: PackedScene = preload("res://scenes/enemy_sniper.tscn")
 var _runner_scene: PackedScene = preload("res://scenes/enemy_runner.tscn")
-
-@export var sniper_chance: float = 0.25  # probabilità che un nemico spawnato sia un cecchino
-@export var runner_chance: float = 0.25  # probabilità che un nemico spawnato sia un runner
+var _crate_script = preload("res://SCRIPTS/supply_crate.gd")
 
 func _ready() -> void:
 	await get_tree().process_frame
 	_player = get_tree().get_first_node_in_group("player")
 	if _player:
-		_next_spawn_x = _player.global_position.x + spawn_distance
+		_next_spawn_x = _player.global_position.x + 1500.0
 
 func _process(_delta: float) -> void:
 	if _finished_spawning or _player == null:
@@ -37,71 +43,64 @@ func _process(_delta: float) -> void:
 	if _player.get("is_dead") == true:
 		return
 
-	if _player.global_position.x >= spawn_stop_x:
-		_finished_spawning = true
-		return
-
 	if _player.global_position.x >= _next_spawn_x:
-		_try_spawn()
-		_next_spawn_x += spawn_distance
+		var base_x = _player.global_position.x
+		var sezione = SEZIONI[_section_index]
 
-func _get_enemy_count() -> int:
-	var px = _player.global_position.x
-	if px >= 25000.0:
-		return 3
-	elif px >= 15000.0:
-		return 2
-	else:
-		return 1
+		var last_offset: float
+		if sezione["tipo"] == "crate":
+			last_offset = _spawn_crates_section(base_x, sezione["quantita"])
+		else:
+			last_offset = _spawn_wave(base_x, sezione["nemici"])
 
-func _try_spawn() -> void:
-	var count = _get_enemy_count()
-	var first_enemy_x := 0.0
+		_section_index += 1
+		if _section_index >= SEZIONI.size():
+			_finished_spawning = true
+			_posiziona_finish_zone(base_x + last_offset + 900.0)
+		else:
+			_next_spawn_x = base_x + last_offset + 500.0
 
+func _spawn_crates_section(base_x: float, count: int) -> float:
+	var spacing = 350.0
+	var last_offset = 0.0
 	for i in range(count):
-		# Ogni nemico è piazzato a distanza crescente per non sovrapporsi
-		var offset = randf_range(1200.0, 1600.0) + i * randf_range(300.0, 500.0)
-		var spawn_x = _player.global_position.x + offset
+		last_offset = 900.0 + i * spacing + randf_range(-40.0, 40.0)
+		var crate = StaticBody2D.new()
+		crate.set_script(_crate_script)
+		crate.position = Vector2(base_x + last_offset, 800)
+		crate.scale = Vector2(0.6, 0.6)
+		get_parent().add_child(crate)
+	return last_offset
+
+func _spawn_wave(base_x: float, composizione: Array) -> float:
+	# I runner vanno sempre nello slot più vicino al giocatore, così nessun
+	# altro nemico gli blocca la corsa verso di noi.
+	var tipi: Array = composizione.duplicate()
+	tipi.sort_custom(func(a, b): return a == "runner" and b != "runner")
+
+	var last_offset = 0.0
+	for i in range(tipi.size()):
+		last_offset = randf_range(1200.0, 1600.0) + i * randf_range(300.0, 500.0)
+		var spawn_x = base_x + last_offset
 
 		var enemy
-		var roll = randf()
-		if roll < sniper_chance:
-			enemy = _sniper_scene.instantiate()
-		elif roll < sniper_chance + runner_chance:
-			enemy = _runner_scene.instantiate()
-		else:
-			enemy = _enemy_scene.instantiate()
-			enemy.raider_index = [1, 2].pick_random()
+		match tipi[i]:
+			"sniper":
+				enemy = _sniper_scene.instantiate()
+			"runner":
+				enemy = _runner_scene.instantiate()
+			_:
+				enemy = _enemy_scene.instantiate()
+				enemy.raider_index = [1, 2].pick_random()
 		enemy.position = Vector2(spawn_x, 696)
 		enemy.scale = Vector2(3.2, 3.2)
 		enemy.use_random_loot = true
 		enemy.drop_item_scene = null
 		enemy.death_tutorial_text = ""
 		get_parent().add_child(enemy)
+	return last_offset
 
-		if i == 0:
-			first_enemy_x = spawn_x
-
-	_spawn_count += 1
-
-	if _spawn_count % crate_spawn_every == 0:
-		_spawn_crates(first_enemy_x)
-
-func _spawn_crates(enemy_x: float) -> void:
-	var crate_script = load("res://SCRIPTS/supply_crate.gd")
-
-	for i in range(2):
-		var crate_x: float
-		if i == 0:
-			crate_x = _player.global_position.x + randf_range(1000.0, 1150.0)
-		else:
-			crate_x = enemy_x + randf_range(200.0, 500.0)
-
-		if abs(crate_x - enemy_x) < 400.0:
-			crate_x = enemy_x + 450.0 + randf_range(0.0, 100.0)
-
-		var crate = StaticBody2D.new()
-		crate.set_script(crate_script)
-		crate.position = Vector2(crate_x, 800)
-		crate.scale = Vector2(0.6, 0.6)
-		get_parent().add_child(crate)
+func _posiziona_finish_zone(finish_x: float) -> void:
+	var finish_zone = get_parent().get_node_or_null("FinishZone")
+	if finish_zone:
+		finish_zone.global_position.x = finish_x
