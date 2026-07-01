@@ -5,17 +5,15 @@ var health: int = 100
 @export var gravity: float = 980.0
 
 # --- SHOOTING ---
-@export var shoot_range: float = 900.0        # aumentato: i raider sparano da più lontano
+@export var shoot_range: float = 600.0
 @export var shoot_cooldown: float = 1.0
 @export var bullet_damage: int = 15
 @export var laser_preavviso: bool = false   # mostra un laser di puntamento prima dello sparo
 @export var tempo_preavviso: float = 0.8     # durata del laser prima del colpo
-var shoot_timer: float = 0.0                  # parte a 0: primo sparo quasi istantaneo
+var shoot_timer: float = 1.5
 var is_shooting: bool = false
 var _laser_attivo: Line2D = null
 var _preavviso_tween: Tween
-var _burst_count: int = 0                     # contatore colpi raffica in stato CROUCH
-var _burst_total: int = 0                     # numero totale colpi della raffica corrente
 
 # --- MELEE (runner) ---
 @export var melee_only: bool = false      # se true: non spara, corre addosso e colpisce in mischia
@@ -128,10 +126,7 @@ func _ready() -> void:
 	_state_timer.one_shot = true
 	add_child(_state_timer)
 	_state_timer.timeout.connect(_on_state_timer_timeout)
-	# Delay iniziale casuale diverso per ogni raider → non sparano tutti insieme
-	_state_timer.start(randf_range(1.5, 3.5))
-	# Piccolo jitter iniziale sullo shoot_timer: ogni nemico spara in momenti diversi
-	shoot_timer = randf_range(0.1, 0.6)
+	_state_timer.start(randf_range(2.0, 4.0))
 
 	_audio_shoot = AudioStreamPlayer.new()
 	_audio_shoot.stream = load("res://assets/Audio/sfx/shooting.wav")
@@ -245,20 +240,10 @@ func _physics_process(delta: float) -> void:
 
 	match _tact_state:
 		EnemyState.CROUCH:
-			# In copertura: lancia una raffica di colpi rapidi
 			if shoot_timer <= 0.0 and not is_shooting and dist <= shoot_range and _is_on_screen():
-				if _burst_count <= 0:
-					# Inizia una nuova raffica (2-3 colpi)
-					_burst_total = randi_range(2, 3)
-					_burst_count = _burst_total
-				_burst_count -= 1
 				_shoot(player)
-				# Tra un colpo e l'altro della raffica il cooldown è molto basso
-				if _burst_count > 0:
-					shoot_timer = 0.28
 		_:
 			if shoot_timer <= 0.0 and not is_shooting and dist <= shoot_range and _is_on_screen():
-				_burst_count = 0  # fuori dalla copertura: nessuna raffica
 				_shoot(player)
 			# Avanza verso il giocatore anche mentre spara
 			if _tact_state == EnemyState.ADVANCE and dist > 150.0 and not is_hurting:
@@ -318,8 +303,7 @@ func _is_player_shooting_at_me(player: Node2D) -> bool:
 
 # --- SHOOT ---
 func _shoot(player: Node2D) -> void:
-	# Varianza casuale sul cooldown: ±30% così i nemici non sparano in sincronia
-	shoot_timer = shoot_cooldown * randf_range(0.7, 1.3)
+	shoot_timer = shoot_cooldown
 
 	var dir_x = sign(player.global_position.x - global_position.x)
 	if dir_x == 0:
