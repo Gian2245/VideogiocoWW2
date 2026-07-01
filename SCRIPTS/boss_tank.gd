@@ -44,6 +44,7 @@ func _create_health_bar() -> void:
 	health_bar.texture_progress = tex
 	health_bar.tint_under = Color(0.15, 0.15, 0.15, 0.85)
 	health_bar.max_value = max_hp
+	health_bar.min_value = -175
 	health_bar.value = current_hp
 	health_bar.fill_mode = 0  # sinistra -> destra
 	health_bar.size = Vector2(1536, 1024)
@@ -162,12 +163,14 @@ func die() -> void:
 		
 	await get_tree().create_timer(1.5).timeout
 	
-	var win_scene_script = load("res://SCRIPTS/win_screen_3.gd")
-	if win_scene_script:
-		var win_node = CanvasLayer.new()
-		win_node.set_script(win_scene_script)
-		get_tree().current_scene.add_child(win_node)
-		win_node.call("mostra")
+	# Evita che appaia la vittoria se il giocatore è morto nel frattempo
+	if not (_player and _player.get("is_dead") == true):
+		var win_scene_script = load("res://SCRIPTS/win_screen_3.gd")
+		if win_scene_script:
+			var win_node = CanvasLayer.new()
+			win_node.set_script(win_scene_script)
+			get_tree().current_scene.add_child(win_node)
+			win_node.call("mostra")
 		
 	# Fai sparire definitivamente il boss dal livello
 	queue_free()

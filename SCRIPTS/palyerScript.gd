@@ -432,7 +432,7 @@ func _lancia_esplosione() -> void:
 	var vy = -speed * sin(angle_rad)  # negativo = verso l'alto
 
 	# Pavimento reale (i nemici sono a questa Y)
-	var floor_y = global_position.y + 240.0
+	var floor_y = global_position.y + 210.0
 
 	# Tempo di volo REALE con dislivello: risolve 0.5*g*t² + vy*t + (start_y - floor_y) = 0
 	# → prende la radice positiva (atterraggio futuro)
@@ -475,7 +475,7 @@ func _lancia_esplosione() -> void:
 
 func _esplodi(pos_esplosione: Vector2) -> void:
 	# Solleviamo visivamente l'esplosione dal pavimento per farla aderire meglio al suolo
-	explosion_fx.global_position = pos_esplosione - Vector2(0, 153)
+	explosion_fx.global_position = pos_esplosione - Vector2(0, 195 * scala_esplosione.y)
 	explosion_fx.flip_h = animated_sprite.flip_h
 	explosion_fx.visible = true
 	explosion_fx.play("esplosione")
