@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 PlayerData="*res://SCRIPTS/player_data.gd"
 Musica="*res://SCRIPTS/musica_sottofondo.gd"
+Progress="*res://SCRIPTS/progress_data.gd"
 
 [display]
 

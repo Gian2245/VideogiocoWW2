@@ -107,13 +107,15 @@ func mostra() -> void:
 	if hud and hud.has_method("ferma_timer"):
 		hud.ferma_timer()
 		secondi = hud.get_tempo_trascorso()
-	_mostra_risultato(secondi)
+	var medaglia := _calcola_medaglia(secondi)
+	Progress.completa_livello(2, medaglia)
+	_mostra_risultato(secondi, medaglia)
 	get_tree().paused = true
 
-func _mostra_risultato(secondi: float) -> void:
+func _mostra_risultato(secondi: float, medaglia: int) -> void:
 	var testo := ""
 	var colore := Color(0.7, 0.7, 0.7)
-	match _calcola_medaglia(secondi):
+	match medaglia:
 		3:
 			testo = "🥇  MEDAGLIA D'ORO"
 			colore = Color(1.0, 0.84, 0.0)
