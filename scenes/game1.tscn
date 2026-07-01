@@ -73,6 +73,11 @@ position = Vector2(4113, 935)
 tutorial_text = "Premi G
 per lanciare una granata"
 
+[node name="TutorialDodge" parent="." unique_id=146169230 instance=ExtResource("4_tutorial")]
+position = Vector2(4395, 935)
+tutorial_text = "Premi SHIFT
+per schivare (sei invincibile per un istante!)"
+
 [node name="TutorialMelee" parent="." unique_id=182668379 instance=ExtResource("4_tutorial")]
 position = Vector2(4676, 930)
 tutorial_text = "Premi Z
