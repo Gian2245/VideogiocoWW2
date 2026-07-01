@@ -58,8 +58,8 @@ var sta_correndo = false
 var carica_granata: float = 0.0
 
 # --- SCHIVATA ---
-const DODGE_DURATA     := 0.4    # secondi di invincibilità totale
-const DODGE_COOLDOWN   := 1.2    # secondi prima di poter schivare di nuovo
+const DODGE_DURATA     := 0.25   # secondi di invincibilità (breve, più reattiva)
+const DODGE_COOLDOWN   := 0.55   # secondi prima di poter schivare di nuovo (fluido)
 const DODGE_DISTANZA   := 130.0  # pixel di spostamento laterale
 const DODGE_MOVE_TIME  := 0.15   # secondi per coprire la distanza (fluido, non teletrasporto)
 const DODGE_ADR_BONUS  := 0.8    # adrenalina guadagnata per schivata riuscita
