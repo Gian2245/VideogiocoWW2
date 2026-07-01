@@ -58,11 +58,12 @@ var sta_correndo = false
 var carica_granata: float = 0.0
 
 # --- SCHIVATA ---
-const DODGE_DURATA     := 0.4    # secondi di invincibilità/dash
+const DODGE_DURATA     := 0.4    # secondi di invincibilità totale
 const DODGE_COOLDOWN   := 1.2    # secondi prima di poter schivare di nuovo
-const DODGE_VELOCITA   := 700.0  # velocità laterale del dash
+const DODGE_DISTANZA   := 130.0  # pixel di spostamento laterale
+const DODGE_MOVE_TIME  := 0.15   # secondi per coprire la distanza (fluido, non teletrasporto)
 const DODGE_ADR_BONUS  := 0.8    # adrenalina guadagnata per schivata riuscita
-var _dodge_timer    := 0.0       # tempo rimasto di schivata attiva
+var _dodge_timer    := 0.0       # tempo rimasto di schivata attiva (invincibilità)
 var _dodge_cooldown := 0.0       # tempo rimasto di cooldown
 var is_dodging      := false
 var _dodge_dir      := 1.0       # direzione della schivata (+1 destra / -1 sinistra)
@@ -190,11 +191,6 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
-	if is_dodging:
-		velocity.x = _dodge_dir * DODGE_VELOCITA
-		move_and_slide()
-		return
-
 	if sta_attaccando:
 		if animated_sprite.animation == "granata" and Input.is_action_pressed("granata"):
 			carica_granata += delta
@@ -306,22 +302,29 @@ func _exit_crouch() -> void:
 
 func _esegui_schivata() -> void:
 	# Direzione: quella in cui ci si sta muovendo, altrimenti quella in cui si guarda
-	var direction := Input.get_axis("ui_left", "ui_right")
-	if direction == 0.0:
+	var dir := Input.get_axis("ui_left", "ui_right")
+	if dir == 0.0:
 		_dodge_dir = -1.0 if animated_sprite.flip_h else 1.0
 	else:
-		_dodge_dir = direction
+		_dodge_dir = dir
 
 	is_dodging      = true
 	_dodge_timer    = DODGE_DURATA
 	_dodge_cooldown = DODGE_COOLDOWN
 
-	# Se c'era un proiettile in arrivo entro 0.6s → schivata perfetta → +adrenalina
+	# Se c'era un proiettile in arrivo → schivata perfetta → +adrenalina
 	if _colpo_in_arrivo_timer > 0.0:
 		_guadagna_adrenalina(DODGE_ADR_BONUS)
 
 	# Feedback visivo: il personaggio diventa semitrasparente durante il dash
 	modulate = Color(0.7, 0.85, 1.0, 0.65)
+
+	# Tween che sposta il personaggio di una distanza fissa in modo FLUIDO
+	# Usiamo global_position direttamente così non ci sono salti bruschi
+	var target_x = global_position.x + _dodge_dir * DODGE_DISTANZA
+	var tween = create_tween()
+	tween.tween_property(self, "global_position:x", target_x, DODGE_MOVE_TIME)\
+		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 
 func _aggiorna_schivata(delta: float) -> void:
 	if _dodge_cooldown > 0.0:
