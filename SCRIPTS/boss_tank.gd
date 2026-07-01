@@ -16,8 +16,9 @@ var flash_scene: PackedScene = preload("res://scenes/effect_flash.tscn")
 @onready var sprite = $Sprite2D
 @onready var cannon = $CannonMarker
 @onready var shoot_timer = $ShootTimer
-
-var health_bar: ProgressBar
+@onready var shoot_sound: AudioStreamPlayer2D = $ShootSound
+@onready var explode_sound: AudioStreamPlayer2D = $ExplodeSound
+var health_bar: TextureProgressBar
 
 func _ready() -> void:
 	current_hp = max_hp
@@ -26,11 +27,30 @@ func _ready() -> void:
 	
 	_player = get_tree().get_first_node_in_group("player")
 	
-	_create_ui()
+	_create_health_bar()
 	
 	shoot_timer.wait_time = shoot_interval
 	shoot_timer.timeout.connect(_on_shoot)
 	shoot_timer.start()
+
+func _create_health_bar() -> void:
+	var tex = load("res://assets/barra vita boss.png")
+	# La texture è 1536x1024, la vogliamo ~400x55 sopra il boss
+	var scale_x = 500.0 / 1536.0
+	var scale_y = 295.0 / 1024.0
+	
+	health_bar = TextureProgressBar.new()
+	health_bar.texture_under = tex
+	health_bar.texture_progress = tex
+	health_bar.tint_under = Color(0.15, 0.15, 0.15, 0.85)
+	health_bar.max_value = max_hp
+	health_bar.value = current_hp
+	health_bar.fill_mode = 0  # sinistra -> destra
+	health_bar.size = Vector2(1536, 1024)
+	health_bar.scale = Vector2(scale_x, scale_y)
+	# Posizione sopra il tank: centrata in X, e in alto
+	health_bar.position = Vector2(-200, -280)
+	add_child(health_bar)
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -66,6 +86,10 @@ func _on_shoot() -> void:
 	if _player and global_position.distance_to(_player.global_position) > shoot_range:
 		return
 		
+	# Suono sparo carro armato
+	if shoot_sound:
+		shoot_sound.play()
+	
 	# Crea il proiettile
 	if projectile_scene:
 		var proj = projectile_scene.instantiate()
@@ -117,6 +141,10 @@ func die() -> void:
 	shoot_timer.stop()
 	modulate = Color(0.3, 0.3, 0.3)
 	
+	# Suono esplosione carro armato
+	if explode_sound:
+		explode_sound.play()
+	
 	# Crea esplosioni sul carro armato
 	for i in range(9):
 		var exp_scene = load("res://scenes/effect_explosion.tscn")
@@ -143,21 +171,3 @@ func die() -> void:
 		
 	# Fai sparire definitivamente il boss dal livello
 	queue_free()
-
-func _create_ui() -> void:
-	health_bar = ProgressBar.new()
-	health_bar.max_value = max_hp
-	health_bar.value = current_hp
-	health_bar.show_percentage = false
-	health_bar.position = Vector2(-75, -200) # Posizionata sopra il carro
-	health_bar.size = Vector2(150, 12)
-	health_bar.visible = true
-	
-	var sb_bg = StyleBoxFlat.new()
-	sb_bg.bg_color = Color(0.2, 0.2, 0.2, 0.8)
-	var sb_fg = StyleBoxFlat.new()
-	sb_fg.bg_color = Color(1.0, 0.0, 0.0)
-	health_bar.add_theme_stylebox_override("background", sb_bg)
-	health_bar.add_theme_stylebox_override("fill", sb_fg)
-	
-	add_child(health_bar)

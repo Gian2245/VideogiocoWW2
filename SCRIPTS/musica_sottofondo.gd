@@ -40,3 +40,14 @@ func ferma() -> void:
 func imposta_volume_db(db: float) -> void:
 	if _player:
 		_player.volume_db = db
+
+# Cambia la traccia musicale (usato per la boss fight)
+func cambia_traccia(path: String) -> void:
+	if _player:
+		_player.stop()
+		_player.stream = load(path)
+		_player.play()
+
+# Ripristina la traccia originale (usato quando si esce dalla boss fight)
+func ripristina() -> void:
+	cambia_traccia(THEME_PATH)
