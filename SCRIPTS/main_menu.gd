@@ -19,7 +19,7 @@ const PIXEL_FONT: Font = preload("res://assets/Fonts/PressStart2P-Regular.ttf")
 const COLOR_GOLD := Color(0.95, 0.75, 0.25)
 const COLOR_LIGHT := Color(0.85, 0.89, 0.95)
 
-@onready var _background: TextureRect = $Background
+
 
 var _items: Array = []   # ogni voce: { btn, arrow_left, arrow_right, base_color, callback }
 var _selected_index: int = 0

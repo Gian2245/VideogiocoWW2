@@ -5,7 +5,7 @@ var health: int = 100
 @export var gravity: float = 980.0
 
 # --- SHOOTING ---
-@export var shoot_range: float = 600.0
+@export var shoot_range: float = 650.0
 @export var shoot_cooldown: float = 1.0
 @export var bullet_damage: int = 15
 @export var laser_preavviso: bool = false   # mostra un laser di puntamento prima dello sparo

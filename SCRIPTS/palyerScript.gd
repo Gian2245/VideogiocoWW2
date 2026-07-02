@@ -394,10 +394,38 @@ func _inizia_sparo() -> void:
 		
 	get_parent().add_child(bullet)
 
+# Restituisce true solo se l'animazione 'ricarica' ha texture valide per il soldato attuale
+func _soldato_ha_ricarica_animazione() -> bool:
+	if not animated_sprite.sprite_frames.has_animation("ricarica"):
+		return false
+	if animated_sprite.sprite_frames.get_frame_count("ricarica") == 0:
+		return false
+	var soldier_index = armi_sbloccate[indice_arma_attuale]["soldier_index"]
+	var expected = "Soldier_" + str(soldier_index)
+	var tex = animated_sprite.sprite_frames.get_frame_texture("ricarica", 0)
+	if tex is AtlasTexture:
+		return tex.atlas != null and tex.atlas.resource_path.contains(expected)
+	return tex != null
+
+func _completa_ricarica() -> void:
+	var arma = armi_sbloccate[indice_arma_attuale]
+	var mancanti = munizioni_massime - munizioni_attuali
+	var da_prelevare = min(mancanti, arma["munizioni_riserva"])
+	munizioni_attuali += da_prelevare
+	arma["munizioni_riserva"] -= da_prelevare
+	arma["munizioni_attuali"] = munizioni_attuali
+	_aggiorna_hud_munizioni()
+
 func _inizia_ricarica() -> void:
 	sta_attaccando = true
-	animated_sprite.play("ricarica")
 	_audio_reload.play()
+	if _soldato_ha_ricarica_animazione():
+		animated_sprite.speed_scale = 1.65
+		animated_sprite.play("ricarica")
+	else:
+		# Il soldato attuale non ha la spritesheet di ricarica: ricarica istantanea
+		_completa_ricarica()
+		sta_attaccando = false
 
 func _inizia_granata() -> void:
 	sta_attaccando = true
@@ -409,12 +437,39 @@ func _inizia_granata() -> void:
 func _lancia_esplosione() -> void:
 	var verso := -1.0 if animated_sprite.flip_h else 1.0
 	
-	# Creiamo una granata visiva
+	# Creiamo la granata visiva — corpo verde oliva con bordo scuro
 	var granata = Polygon2D.new()
-	granata.polygon = PackedVector2Array([Vector2(-8,-8), Vector2(8,-8), Vector2(8,8), Vector2(-8,8)])
-	granata.color = Color(0.15, 0.15, 0.1)
+	# Forma ovale approssimata (corpo granata)
+	granata.polygon = PackedVector2Array([
+		Vector2(-5, -9), Vector2(0, -11), Vector2(5, -9),
+		Vector2(8, -4),  Vector2(8,  4),  Vector2(5,  9),
+		Vector2(0,  11), Vector2(-5, 9),  Vector2(-8, 4),
+		Vector2(-8, -4)
+	])
+	granata.color = Color(0.25, 0.42, 0.18)   # verde oliva militare
+	granata.z_index = 10
+
+	# Bordo scuro per staccarsi dallo sfondo
+	var outline = Polygon2D.new()
+	outline.polygon = PackedVector2Array([
+		Vector2(-6, -10), Vector2(0, -13), Vector2(6, -10),
+		Vector2(10, -5),  Vector2(10, 5),  Vector2(6,  10),
+		Vector2(0,  13),  Vector2(-6, 10), Vector2(-10, 5),
+		Vector2(-10, -5)
+	])
+	outline.color = Color(0.05, 0.05, 0.05, 0.85)
+	outline.z_index = 9
+	granata.add_child(outline)
+
+	# Piccola leva in cima (dettaglio visivo)
+	var leva = Polygon2D.new()
+	leva.polygon = PackedVector2Array([Vector2(-3,-11), Vector2(3,-11), Vector2(2,-16), Vector2(-2,-16)])
+	leva.color = Color(0.6, 0.5, 0.2)
+	leva.z_index = 11
+	granata.add_child(leva)
+
 	get_parent().add_child(granata)
-	
+
 	# Punto di partenza: circa la mano del giocatore
 	var start_pos = global_position + Vector2(40 * verso, -50)
 	granata.global_position = start_pos
@@ -450,6 +505,24 @@ func _lancia_esplosione() -> void:
 	var peak_y = start_pos.y + vy * t_peak + 0.5 * gravity * t_peak * t_peak
 	var t_down = t_volo - t_peak
 
+	# --- SCIA PRE-CALCOLATA ---
+	# Campioniamo 14 punti lungo la traiettoria parabolica (già nota prima del lancio)
+	# e li aggiungiamo tutti subito alla Line2D — nessun callback in loop
+	var scia = Line2D.new()
+	scia.width = 5.0
+	scia.z_index = 8
+	var scia_grad = Gradient.new()
+	scia_grad.set_color(0, Color(1.0, 0.75, 0.1, 0.0))   # inizio: trasparente
+	scia_grad.set_color(1, Color(1.0, 0.55, 0.05, 0.65)) # fine: arancio visibile
+	scia.gradient = scia_grad
+	var n_punti := 14
+	for i in range(n_punti):
+		var t := (float(i) / float(n_punti - 1)) * t_volo
+		var px := start_pos.x + vx * t
+		var py := start_pos.y + vy * t + 0.5 * gravity * t * t
+		scia.add_point(Vector2(px, py))
+	get_parent().add_child(scia)
+
 	# Tween orizzontale (lineare, costante)
 	var tween = create_tween()
 	tween.tween_property(granata, "global_position:x", end_pos.x, t_volo)
@@ -464,11 +537,18 @@ func _lancia_esplosione() -> void:
 	# Rotazione durante il volo
 	var tween_rot = create_tween()
 	tween_rot.tween_property(granata, "rotation", deg_to_rad(360.0 * 2.5 * verso), t_volo)
-	
+
+	# Al termine: libera granata e scia, poi esplodi
 	tween_y.finished.connect(func():
-		granata.queue_free()
+		if is_instance_valid(granata):
+			granata.queue_free()
+		if is_instance_valid(scia):
+			var fade = create_tween()
+			fade.tween_property(scia, "modulate:a", 0.0, 0.2)
+			fade.tween_callback(scia.queue_free)
 		_esplodi(end_pos)
 	)
+
 	
 	sta_attaccando = false
 	animated_sprite.play("fermo")
@@ -552,14 +632,7 @@ func _on_animation_finished() -> void:
 		return
 
 	if animated_sprite.animation == "ricarica":
-		# Preleva le munizioni necessarie dalla riserva
-		var arma = armi_sbloccate[indice_arma_attuale]
-		var mancanti = munizioni_massime - munizioni_attuali
-		var da_prelevare = min(mancanti, arma["munizioni_riserva"])
-		munizioni_attuali += da_prelevare
-		arma["munizioni_riserva"] -= da_prelevare
-		arma["munizioni_attuali"] = munizioni_attuali
-		_aggiorna_hud_munizioni()
+		_completa_ricarica()
 	elif animated_sprite.animation == "spara":
 		if modalita_sparo != "Semi-Auto" and Input.is_action_pressed("spara") and munizioni_attuali > 0:
 			_inizia_sparo()
@@ -568,8 +641,10 @@ func _on_animation_finished() -> void:
 		_lancia_esplosione()
 		return
 	if animated_sprite.animation in ["attack", "spara", "ricarica"]:
+		animated_sprite.speed_scale = 1.0
 		sta_attaccando = false
 		animated_sprite.play("fermo")
+
 
 func _aggiorna_hud_munizioni() -> void:
 	if _hud == null:
