@@ -9,8 +9,8 @@
 [ext_resource type="Texture2D" uid="uid://codmvga6su4r3" path="res://assets/Soldier_1/Recharge.png" id="6_rech"]
 [ext_resource type="Texture2D" uid="uid://jbaowja2mtm3" path="res://assets/Soldier_1/Grenade.png" id="7_gren"]
 [ext_resource type="Texture2D" uid="uid://dd72aqcfkl16d" path="res://assets/Soldier_1/Explosion.png" id="8_expl"]
-[ext_resource type="Texture2D" uid="uid://bx4m7qnvk2t9r" path="res://assets/Soldier_1/Hurt.png" id="9_hurt"]
-[ext_resource type="Texture2D" uid="uid://c3p8wlvdy5n1m" path="res://assets/Soldier_1/Dead.png" id="10_dead"]
+[ext_resource type="Texture2D" uid="uid://bc8fhuimmewlf" path="res://assets/Soldier_1/Hurt.png" id="9_hurt"]
+[ext_resource type="Texture2D" uid="uid://cgsriouhs2gnu" path="res://assets/Soldier_1/Dead.png" id="10_dead"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_qgfdq"]
 atlas = ExtResource("2_wqd30")

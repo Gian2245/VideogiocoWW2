@@ -144,6 +144,7 @@ func _calcola_medaglia(secondi: float) -> int:
 
 func _format_tempo(secondi: float) -> String:
 	var totale := int(secondi)
+	@warning_ignore("integer_division")
 	return "%02d:%02d" % [totale / 60, totale % 60]
 
 func _on_esci() -> void:

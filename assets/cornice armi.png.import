@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dpk8b0tbyto27"
-path="res://.godot/imported/UI_Arma-AR11.png-e369f1a2ba1e12d6e56abec9f9398365.ctex"
+uid="uid://cqwcwjk3i7a6e"
+path="res://.godot/imported/cornice armi.png-e2515da7ab426e17ed20708d68a41a1e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/UI_Arma-AR11.png"
-dest_files=["res://.godot/imported/UI_Arma-AR11.png-e369f1a2ba1e12d6e56abec9f9398365.ctex"]
+source_file="res://assets/cornice armi.png"
+dest_files=["res://.godot/imported/cornice armi.png-e2515da7ab426e17ed20708d68a41a1e.ctex"]
 
 [params]
 

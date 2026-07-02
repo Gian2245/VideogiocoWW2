@@ -34,11 +34,16 @@ func _ready() -> void:
 	shoot_timer.start()
 
 func _create_health_bar() -> void:
-	var tex = load("res://assets/barra vita boss.png")
-	# La texture è 1536x1024, la vogliamo ~400x55 sopra il boss
-	var scale_x = 500.0 / 1536.0
-	var scale_y = 295.0 / 1024.0
-	
+	var full_tex = load("res://assets/barra vita boss.png")
+	# La texture sorgente è 1536x1024, ma la barra vera e propria occupa solo una piccola
+	# zona centrale (il resto è margine trasparente): la ritagliamo così il riquadro
+	# combacia esattamente con la barra, senza spazio vuoto attorno.
+	var tex := AtlasTexture.new()
+	tex.atlas = full_tex
+	tex.region = Rect2(130, 420, 1276, 120)
+
+	var scala = 460.0 / 1276.0
+
 	health_bar = TextureProgressBar.new()
 	health_bar.texture_under = tex
 	health_bar.texture_progress = tex
@@ -47,11 +52,20 @@ func _create_health_bar() -> void:
 	health_bar.min_value = -175
 	health_bar.value = current_hp
 	health_bar.fill_mode = 0  # sinistra -> destra
-	health_bar.size = Vector2(1536, 1024)
-	health_bar.scale = Vector2(scale_x, scale_y)
-	# Posizione sopra il tank: centrata in X, e in alto
-	health_bar.position = Vector2(-200, -280)
-	add_child(health_bar)
+	health_bar.size = Vector2(1276, 120)
+	health_bar.scale = Vector2(scala, scala)
+	health_bar.visible = true  # visibile fin dall'ingresso nel livello del boss
+
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud:
+		hud.add_child(health_bar)
+		# Esattamente nell'angolo in alto a destra del viewport (1280x720), con lo stesso
+		# margine di 14px usato dalle altre card dell'HUD.
+		health_bar.position = Vector2(1280.0 - 14.0 - 1276.0 * scala, 14.0)
+	else:
+		# Fallback (nessun HUD in scena): comportamento originale, sopra il boss in world space.
+		add_child(health_bar)
+		health_bar.position = Vector2(-200, -280)
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -156,8 +170,10 @@ func die() -> void:
 			
 	# Aspetta 1 secondo esatto prima di eseguire il codice successivo
 	await get_tree().create_timer(0.5).timeout
-	
+
 	visible = false
+	if health_bar:
+		health_bar.visible = false
 	if has_node("CollisionShape2D"):
 		$CollisionShape2D.set_deferred("disabled", true)
 		
@@ -173,4 +189,6 @@ func die() -> void:
 			win_node.call("mostra")
 		
 	# Fai sparire definitivamente il boss dal livello
+	if health_bar:
+		health_bar.queue_free()
 	queue_free()

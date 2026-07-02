@@ -1,13 +1,13 @@
-[gd_scene load_steps=11 format=3 uid="uid://y8qlg5spdxb5"]
+[gd_scene load_steps=10 format=3 uid="uid://y8qlg5spdxb5"]
 
 [ext_resource type="Script" path="res://SCRIPTS/hud.gd" id="1_hud"]
-[ext_resource type="Texture2D" uid="uid://jbaowja2mtm3" path="res://assets/Soldier_1/Grenade.png" id="3_grenade"]
 [ext_resource type="Texture2D" path="res://assets/bar_frame.png" id="5_bar_frame"]
 [ext_resource type="Texture2D" path="res://assets/bar_bg_empty.png" id="6_bar_bg"]
 [ext_resource type="Texture2D" path="res://assets/bar_fill_health.png" id="7_fill_health"]
 [ext_resource type="Texture2D" path="res://assets/bar_fill_armor.png" id="8_fill_armor"]
 [ext_resource type="Texture2D" path="res://assets/bar_fill_adrenalina.png" id="9_fill_adrenalina"]
-[ext_resource type="Texture2D" path="res://assets/UI_Arma-AR11.png" id="10_weapon_panel"]
+[ext_resource type="PackedScene" path="res://scenes/PickupToast.tscn" id="11_pickup_toast"]
+[ext_resource type="PackedScene" path="res://scenes/WeaponHUD.tscn" id="12_weapon_hud"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.04, 0.05, 0.06, 0.72)
@@ -24,13 +24,6 @@ content_margin_left = 10.0
 content_margin_top = 6.0
 content_margin_right = 10.0
 content_margin_bottom = 6.0
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_weapon_inner"]
-bg_color = Color(0.07, 0.065, 0.055, 1)
-content_margin_left = 6.0
-content_margin_top = 4.0
-content_margin_right = 6.0
-content_margin_bottom = 4.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_health_panel"]
 bg_color = Color(0.05, 0.06, 0.07, 0.78)
@@ -202,120 +195,8 @@ fill_mode = 0
 max_value = 50.0
 value = 0.0
 
-[node name="WeaponRoot" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -272.0
-offset_top = -142.0
-offset_right = -12.0
-offset_bottom = -12.0
-grow_horizontal = 0
-grow_vertical = 0
-
-[node name="Background" type="TextureRect" parent="WeaponRoot"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("10_weapon_panel")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Panel" type="PanelContainer" parent="WeaponRoot"]
-layout_mode = 1
-offset_left = 26.0
-offset_top = 34.0
-offset_right = 234.0
-offset_bottom = 109.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_weapon_inner")
-
-[node name="HBox" type="HBoxContainer" parent="WeaponRoot/Panel"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="WeaponBlock" type="VBoxContainer" parent="WeaponRoot/Panel/HBox"]
-layout_mode = 2
-custom_minimum_size = Vector2(52, 0)
-theme_override_constants/separation = 2
-
-[node name="WeaponName" type="Label" parent="WeaponRoot/Panel/HBox/WeaponBlock"]
+[node name="WeaponHUD" parent="." instance=ExtResource("12_weapon_hud")]
 unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
-theme_override_font_sizes/font_size = 14
-text = "AR11"
-
-[node name="FireMode" type="Label" parent="WeaponRoot/Panel/HBox/WeaponBlock"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.62, 0.65, 0.68, 1)
-theme_override_font_sizes/font_size = 7
-text = "SEMI-AUTO"
-
-[node name="AmmoBlock" type="HBoxContainer" parent="WeaponRoot/Panel/HBox"]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="AmmoNumbers" type="VBoxContainer" parent="WeaponRoot/Panel/HBox/AmmoBlock"]
-layout_mode = 2
-theme_override_constants/separation = -2
-
-[node name="AmmoCurrent" type="Label" parent="WeaponRoot/Panel/HBox/AmmoBlock/AmmoNumbers"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
-theme_override_font_sizes/font_size = 24
-text = "8"
-horizontal_alignment = 2
-
-[node name="AmmoReserve" type="Label" parent="WeaponRoot/Panel/HBox/AmmoBlock/AmmoNumbers"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.72, 0.72, 0.72, 1)
-theme_override_font_sizes/font_size = 9
-text = "8"
-horizontal_alignment = 2
-
-[node name="BulletIcon" type="Label" parent="WeaponRoot/Panel/HBox/AmmoBlock"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_font_sizes/font_size = 12
-text = "|"
-vertical_alignment = 1
-
-[node name="GrenadeBlock" type="HBoxContainer" parent="WeaponRoot/Panel/HBox"]
-layout_mode = 2
-theme_override_constants/separation = 3
-alignment = 1
-
-[node name="GrenadeCount" type="Label" parent="WeaponRoot/Panel/HBox/GrenadeBlock"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
-theme_override_font_sizes/font_size = 11
-text = "2"
-vertical_alignment = 1
-
-[node name="GrenadeIcon" type="TextureRect" parent="WeaponRoot/Panel/HBox/GrenadeBlock"]
-custom_minimum_size = Vector2(16, 16)
-layout_mode = 2
-texture = ExtResource("3_grenade")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="GrenadeCount2" type="Label" parent="WeaponRoot/Panel/HBox/GrenadeBlock"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
-theme_override_font_sizes/font_size = 13
-text = "2"
-vertical_alignment = 1
 
 [node name="AdrenalineRoot" type="Control" parent="."]
 layout_mode = 3
@@ -414,3 +295,6 @@ theme_override_font_sizes/font_size = 22
 text = "00:00"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="PickupToast" parent="." instance=ExtResource("11_pickup_toast")]
+unique_name_in_owner = true

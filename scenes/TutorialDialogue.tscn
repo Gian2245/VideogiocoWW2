@@ -1,0 +1,77 @@
+[gd_scene load_steps=3 format=3 uid="uid://bu41tup7n5sk1"]
+
+[ext_resource type="Script" path="res://SCRIPTS/TutorialDialogue.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/Riquadro Dialogo - box.png" id="2_frame"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_spazio"]
+atlas = ExtResource("2_frame")
+region = Rect2(725, 184, 125, 52)
+
+[node name="TutorialDialogue" type="CanvasLayer"]
+layer = 20
+script = ExtResource("1_script")
+
+[node name="DialogueRoot" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -280.0
+offset_top = -211.0
+offset_right = 280.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="Frame" type="TextureRect" parent="DialogueRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_frame")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DialogueLabel" type="Label" parent="DialogueRoot"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 115.0
+offset_top = 65.0
+offset_right = -107.0
+offset_bottom = -35.0
+theme_override_colors/font_color = Color(0.97, 0.97, 0.95, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 11
+horizontal_alignment = 1
+vertical_alignment = 1
+text = ""
+
+[node name="SpazioBlink" type="TextureRect" parent="DialogueRoot"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 469.0
+offset_top = 119.0
+offset_right = -10.0
+offset_bottom = -34.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_spazio")
+expand_mode = 1
+stretch_mode = 0

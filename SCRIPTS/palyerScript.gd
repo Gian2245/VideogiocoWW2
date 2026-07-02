@@ -35,6 +35,7 @@ var is_dead := false
 var is_crouching: bool = false
 var _player_col_node: CollisionShape2D
 var _player_col_shape: CapsuleShape2D
+var _salto_soppresso := false
 
 var armi_sbloccate: Array = [
 	{
@@ -81,9 +82,6 @@ var sta_attaccando = false
 var _hud: Node
 var max_cam_x := -INF
 
-var _tutorial_label: Label
-var _tutorial_tween: Tween
-
 var _audio_shoot: AudioStreamPlayer
 var _audio_reload: AudioStreamPlayer
 var _audio_melee: AudioStreamPlayer
@@ -119,20 +117,6 @@ func _ready() -> void:
 		event_dodge.physical_keycode = KEY_SHIFT
 		InputMap.action_add_event("schivata", event_dodge)
 
-	_tutorial_label = Label.new()
-	_tutorial_label.position = Vector2(-200, -160)
-	_tutorial_label.custom_minimum_size = Vector2(400, 0)
-	_tutorial_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_tutorial_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_tutorial_label.modulate.a = 0.0
-	
-	var settings = LabelSettings.new()
-	settings.font_size = 14
-	settings.outline_size = 4
-	settings.outline_color = Color.BLACK
-	_tutorial_label.label_settings = settings
-	add_child(_tutorial_label)
-		
 	_player_col_node = $CollisionShape2D
 	_player_col_shape = _player_col_node.shape as CapsuleShape2D
 
@@ -247,8 +231,11 @@ func _physics_process(delta: float) -> void:
 		_esegui_schivata()
 		return
 
-	if Input.is_action_just_pressed("ui_accept") and is_on_floor() and not is_crouching:
-		velocity.y = JUMP_VELOCITY
+	if Input.is_action_just_pressed("ui_accept"):
+		if _salto_soppresso:
+			_salto_soppresso = false
+		elif is_on_floor() and not is_crouching:
+			velocity.y = JUMP_VELOCITY
 
 	var direction := Input.get_axis("ui_left", "ui_right")
 
@@ -669,13 +656,13 @@ func _trigger_game_over() -> void:
 		go_screen.mostra()
 
 func _mostra_tutorial(testo: String, durata: float = 4.0) -> void:
-	_tutorial_label.text = testo
-	if _tutorial_tween and _tutorial_tween.is_valid():
-		_tutorial_tween.kill()
-	_tutorial_tween = create_tween()
-	_tutorial_tween.tween_property(_tutorial_label, "modulate:a", 1.0, 0.5)
-	_tutorial_tween.tween_interval(durata)
-	_tutorial_tween.tween_property(_tutorial_label, "modulate:a", 0.0, 0.5)
+	if _hud and _hud.has_method("mostra_toast"):
+		_hud.mostra_toast(testo, durata)
+
+## Chiamato da TutorialDialogue quando SPAZIO chiude/avanza un dialogo: evita che
+## lo stesso tasto, letto di nuovo appena il gioco si sblocca, faccia anche saltare.
+func sopprimi_prossimo_salto() -> void:
+	_salto_soppresso = true
 
 func raccogli_giubbotto() -> void:
 	armor = max_armor
