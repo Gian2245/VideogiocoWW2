@@ -49,7 +49,7 @@ func _create_health_bar() -> void:
 	health_bar.texture_progress = tex
 	health_bar.tint_under = Color(0.15, 0.15, 0.15, 0.85)
 	health_bar.max_value = max_hp
-	health_bar.min_value = -175
+	health_bar.min_value = -144
 	health_bar.value = current_hp
 	health_bar.fill_mode = 0  # sinistra -> destra
 	health_bar.size = Vector2(1276, 120)
