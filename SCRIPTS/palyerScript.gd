@@ -517,9 +517,9 @@ func _lancia_esplosione() -> void:
 	scia.gradient = scia_grad
 	var n_punti := 14
 	for i in range(n_punti):
-		var t := (float(i) / float(n_punti - 1)) * t_volo
-		var px := start_pos.x + vx * t
-		var py := start_pos.y + vy * t + 0.5 * gravity * t * t
+		var t: float = (float(i) / float(n_punti - 1)) * t_volo
+		var px: float = start_pos.x + vx * t
+		var py: float = start_pos.y + vy * t + 0.5 * gravity * t * t
 		scia.add_point(Vector2(px, py))
 	get_parent().add_child(scia)
 

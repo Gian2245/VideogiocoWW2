@@ -1,0 +1,213 @@
+﻿================================================================
+  GDD — MECCANICHE CORE DEL SOLDATO PROTAGONISTA
+  Videogioco WW2 | Estratto da palyerScript.gd
+================================================================
+
+----------------------------------------------------------------
+1. MOVIMENTO
+----------------------------------------------------------------
+
+  Camminata
+  - Velocita': 360 px/s
+  - Il personaggio si ferma con decelerazione graduale
+
+  Corsa (Doppio Tocco)
+  - Attivazione: doppia pressione di Sinistra o Destra entro 0.25s
+  - Velocita': 660 px/s
+  - Disattivazione: quando si smette di muoversi
+
+  Accovacciamento (Crouch)
+  - Tasto: Freccia Giu' (solo a terra)
+  - Effetto: riduce la hitbox verticale, velocita' dimezzata (180 px/s)
+  - Blocca il salto durante l'accovacciamento
+
+  Salto
+  - Tasto: Spazio / UI Accept (solo a terra, non accovacciato)
+  - Velocita' verticale iniziale: -750 px/s
+  - Gravita': valore globale di progetto (Godot default)
+
+  Telecamera
+  - Segue il giocatore solo verso destra (non torna mai indietro)
+  - Bloccata se ci sono nemici vivi fuori schermo a destra
+  - Il giocatore non puo' uscire a sinistra dello schermo
+  - Zoom: 0.68x; si ingrandisce leggermente durante l'Adrenalina
+
+----------------------------------------------------------------
+2. COMBATTIMENTO — ARMI DA FUOCO
+----------------------------------------------------------------
+
+  Arma Base: AR11 (Semi-Auto)
+  - Modalita': Semi-Automatica (un colpo per pressione)
+  - Caricatore: 8 colpi
+  - Riserva: 24 colpi
+  - Danno per colpo: 35 HP
+  - Velocita' proiettile: 1600 px/s (orizzontale)
+
+  Arma Secondaria: STG44 (Automatico)
+  - Modalita': Automatica (fuoco continuo tenendo premuto)
+  - Caricatore: 15 colpi
+  - Riserva: 45 colpi
+  - Danno per colpo: 20 HP
+  - Sblocco: raccogliendo l'arma nel livello
+
+  Cambio Arma
+  - Tasto: Q
+  - Disponibile solo con 2+ armi sbloccate, non durante azioni
+  - L'inventario munizioni di ogni arma e' separato e persistente
+
+  Ricarica
+  - Tasto: R (solo se caricatore non pieno e c'e' riserva)
+  - AR11: animazione a 1.65x velocita' + audio
+  - STG44: ricarica istantanea (nessuna animazione)
+  - Blocca tutti gli altri input durante l'animazione
+
+----------------------------------------------------------------
+3. COMBATTIMENTO — MISCHIA (MELEE)
+----------------------------------------------------------------
+
+  - Tasto: Z
+  - Danno: 35 HP (x2 in modalita' Adrenalina)
+  - Portata: 250 px orizzontale, 150 px verticale (solo frontale)
+  - Colpisce il bersaglio piu' vicino in ordine di distanza
+  - Colpisce anche le casse distruttibili nell'area
+  - Uccisioni corpo a corpo generano +50% di carica Adrenalina
+    rispetto alle uccisioni con arma da fuoco
+
+----------------------------------------------------------------
+4. GRANATA
+----------------------------------------------------------------
+
+  - Tasto: G (tenuto per caricare la potenza)
+  - Dotazione iniziale: 2 granate
+  - Raccoglibili nel livello (drop dai nemici o casse)
+
+  Lancio con Fisica Balistica Realistica:
+  - Angolo fisso: 45 gradi per massima gittata
+  - Potenza (carica): 0.0 - 1.0 (carica massima in 0.5 secondi)
+  - Velocita' scalare: da 400 px/s (no carica) a 950 px/s (carica max)
+  - Traiettoria: parabola con dislivello reale calcolato fisicamente
+  - Rotazione durante il volo: 2.5 giri completi
+
+  Esplosione:
+  - Raggio: 200 pixel
+  - Danno massimo: 100 HP (x2 in modalita' Adrenalina)
+  - Danno istantaneo se entro 60 px dal centro (elimina subito)
+  - Danno scalare (lineare) tra 60 e 200 px, minimo 10 HP
+  - Colpisce sia nemici che casse distruttibili
+
+  Feedback Visivo Granata in Volo:
+  - Corpo: forma ovale verde oliva militare con outline scuro
+  - Dettaglio: leva metallica in cima
+  - Scia: traiettoria parabolica pre-calcolata in arancio/giallo
+
+----------------------------------------------------------------
+5. SCHIVATA (DODGE)
+----------------------------------------------------------------
+
+  - Tasto: Shift (solo a terra, non durante un'altra schivata)
+  - Direzione: quella del movimento attuale, o quella dello sguardo
+  - Spostamento laterale: 130 pixel in 0.15 secondi (interpolato)
+  - Durata invincibilita': 0.4 secondi
+  - Cooldown tra schivate: 0.55 secondi
+  - Feedback visivo: personaggio semitrasparente durante l'invincibilita'
+
+  Schivata Perfetta (Parry):
+  - Si attiva se si schiva entro 0.6s da quando un proiettile
+    nemico e' passato vicino senza colpire
+  - Ricompensa: +0.8 di carica Adrenalina
+
+----------------------------------------------------------------
+6. SALUTE E ARMATURA
+----------------------------------------------------------------
+
+  Punti Vita (HP):
+  - Massimo: 100 HP
+  - Recupero: solo tramite medikit trovati nel livello
+  - A 0 HP: animazione di morte e Game Over
+
+  Armatura:
+  - Massimo: 50 punti
+  - Assorbe i danni prima degli HP (priorita' assoluta)
+  - Fonte: giubbotto antiproiettile raccoglibile
+  - Equipaggiare un giubbotto ripristina sempre al massimo (50)
+
+  Danni Ricevuti:
+  - Il giocatore e' INVINCIBILE durante la schivata
+  - I danni vengono prima assorbiti dall'armatura, poi dagli HP
+  - Ricevere danni interrompe l'azione corrente (animazione hurt)
+
+----------------------------------------------------------------
+7. MODALITA' ADRENALINA
+----------------------------------------------------------------
+
+  Accumulo Carica:
+  - Barra: da 0 a 5 punti
+  - Uccisione con arma da fuoco: +1.0 punto
+  - Uccisione in mischia: +1.5 punti (+50%)
+  - Schivata perfetta: +0.8 punti
+  - La barra si ricarica solo fuori dalla modalita' Adrenalina
+
+  Attivazione:
+  - Tasto: H (solo a barra piena)
+  - Effetto immediato: rallentamento tempo (0.85x per 0.5s)
+  - Feedback audio: suono dedicato all'attivazione
+  - Feedback telecamera: zoom in leggero (+12%, 0.25s)
+  - Feedback HUD: filtro visivo attivato
+
+  Effetti Attivi (durata 5 secondi):
+  - Velocita' di movimento: x1.4 rispetto al normale
+  - Danno di tutti gli attacchi: x2 (arma, mischia, granata)
+  - Le uccisioni durante la modalita' prolungano la durata
+    invece di ricaricare la barra (fino al massimo di 5s)
+
+  Disattivazione:
+  - Timer esaurito: ritorno allo zoom normale (0.4s, interpolato)
+  - HUD filtro rimosso, barra azzerata
+
+----------------------------------------------------------------
+8. INVENTARIO E RACCOLTA OGGETTI
+----------------------------------------------------------------
+
+  Oggetti Raccoglibili nel Livello:
+  - Medikit: ripristina HP (quantita' variabile per tipo)
+  - Munizioni: ricarica la riserva dell'arma corrente al massimo
+  - Granata: +1 granata alla dotazione
+  - Giubbotto: armatura al massimo (50)
+  - Nuova Arma: sblocca la STG44 con caricatore pieno
+
+  Persistenza tra Livelli:
+  - Inventario (armi, munizioni, HP, armatura, granate)
+    viene salvato e caricato al cambio di livello tramite PlayerData
+  - Se non ci sono dati salvati (primo livello), si parte
+    con i valori di default
+
+----------------------------------------------------------------
+9. TELECAMERA E LEVEL FLOW
+----------------------------------------------------------------
+
+  - La telecamera scorre solo verso destra (scrolling unidirezionale)
+  - Il giocatore non puo' tornare oltre il bordo sinistro
+  - Il progresso della telecamera e' bloccato finche' ci sono
+    nemici vivi sullo schermo (arena lock)
+  - Offset verticale fisso: -64 px rispetto al personaggio
+
+----------------------------------------------------------------
+10. INPUT — MAPPA COMANDI
+----------------------------------------------------------------
+
+  Freccia Destra / Sinistra     -> Movimento
+  Doppio tocco Destra/Sinistra  -> Attiva corsa
+  Freccia Giu'                  -> Accovacciamento (a terra)
+  Spazio                        -> Salto (a terra, non accovacciato)
+  X / Tasto Fuoco               -> Spara
+  Z                             -> Attacco corpo a corpo
+  R                             -> Ricarica
+  G (tieni premuto)             -> Lancia granata (carica potenza)
+  Q                             -> Cambia arma
+  Shift                         -> Schivata
+  H                             -> Attiva modalita' Adrenalina
+
+================================================================
+  Note: valori numerici estratti direttamente dal codice sorgente
+  (palyerScript.gd) — aggiornati al 02/07/2026.
+================================================================
